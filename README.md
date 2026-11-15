@@ -153,3 +153,65 @@ frontend 39 Vitest tests, 18 Playwright tests (desktop + mobile, axe WCAG 2.1 AA
   always use the exact searched stations; the UI offers a search for each train's own stations.
 - RailKit's caching, storage and commercial-redistribution terms are unconfirmed; this is a
   launch gate (docs/06 §8).
+
+
+## Future
+
+1. Advanced Journey Optimization
+
+
+  - Expand the core optimization engine to support more advanced journey-planning scenarios.
+  - Multiple-segment ticket combinations.
+  - Automatically identify optimal intermediate stations.
+  - Compare different trains and travel dates.
+  - Support multiple travel classes and reservation quotas.
+  - Eventually support journeys involving different trains, with realistic transfer times   between connecting trains.
+
+2. AI-Powered Availability Intelligence
+
+  - Introduce intelligent features that help passengers make better booking decisions using historical railway availability data and predictive analytics.
+  - Historical waitlist confirmation analysis.
+  - Predict the probability of waitlist confirmation.
+  - Identify the best time to book tickets.
+  - Compare availability trends across different travel dates.
+  - Recommend alternative trains or travel dates.
+  - Develop an independent ML-based prediction model using historical availability and booking outcome data.
+
+Important: Actual ticket availability and predicted confirmation probability must always be treated as separate concepts. Predictions should never be presented as guaranteed outcomes. Initially, RailKit's prediction data can be used, with the possibility of developing an independent prediction model in the future.
+
+3. Complete Railway Travel Assistant
+
+  - Expand the application beyond ticket availability optimization by integrating additional railway information and passenger services.
+  - Live train running status.
+  - Platform and station information, wherever reliable data is available.
+  - PNR status tracking.
+  - Train delay alerts and journey notifications.
+  - Station facilities and nearby services.
+
+4. Smart Passenger Features
+
+  - Introduce personalized features to improve the overall passenger experience and make the platform useful beyond individual searches.
+  - Save favourite routes.
+  - Notify users when ticket availability improves.
+  - Track multiple booking PNRs belonging to a single journey.
+  - Provide a consolidated itinerary for journeys involving multiple tickets.
+  - Display total journey fare and segment-wise ticket costs.
+  - Explain booking risks and limitations associated with separate tickets.
+
+5. Booking Ecosystem Integration
+
+  - Build integrations with authorized railway booking platforms and travel service providers to create a smoother journey-planning and booking experience.
+  - Provide deep links to authorized ticket-booking platforms.
+  - Partner with authorized railway information providers.
+  - Potentially integrate permitted ticket-booking APIs.
+  - Explore affiliate and referral-based revenue opportunities.
+  - Eventually introduce a booking workflow, subject to the required authorization and availability of official integrations.
+
+6. Business and Enterprise Opportunities
+
+  - Explore commercial opportunities by making the RailRoute optimization engine available to other businesses and travel platforms.
+  - Provide API access to travel companies.
+  - Offer white-label journey optimization solutions for travel agencies.
+  - Develop analytics dashboards for travel businesses.
+  - Introduce subscription plans for frequent travellers.
+  - Establish partnerships with travel platforms and relevant service providers.
