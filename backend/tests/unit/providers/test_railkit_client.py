@@ -8,6 +8,7 @@ import httpx
 import pytest
 
 from app.core.clock import FrozenClock
+from app.domain.enums import Quota
 from app.domain.models import AvailabilityQuery
 from app.integrations.railkit.client import RailKitHttpClient
 from app.integrations.railkit.provider import RailKitProvider
@@ -257,3 +258,37 @@ async def test_station_lookup_by_code_url_and_not_found() -> None:
         "/api/v1/stations/TVCN",
         "/api/v1/stations/ZZZZ",
     ]
+
+
+async def test_tatkal_quota_is_sent_in_the_path() -> None:
+    payload = load_fixture("seat_availability_docs.json")
+    payload["data"]["train"]["quota"] = "TQ"
+    router = Router(json_response(200, payload))
+    provider = RailKitProvider(
+        make_client(router),
+        clock=FrozenClock(datetime(2026, 11, 8, tzinfo=UTC)),
+        fare_currency="INR",
+    )
+    assert provider.supported_quotas == frozenset({Quota.GENERAL, Quota.TATKAL})
+    record = await provider.get_availability(
+        AvailabilityQuery("12904", "NZM", "BDTS", date(2026, 9, 1), "3A", Quota.TATKAL)
+    )
+    assert record.anomalies == ()
+    assert [r.url.path for r in router.requests] == [
+        "/api/v1/seats/12904/NZM/BDTS/01-09-2026/3A/TQ"
+    ]
+
+
+async def test_disabling_tatkal_by_configuration_sends_no_request() -> None:
+    router = Router(json_response(200, load_fixture("seat_availability_docs.json")))
+    provider = RailKitProvider(
+        make_client(router),
+        clock=FrozenClock(datetime(2026, 11, 8, tzinfo=UTC)),
+        fare_currency="INR",
+        supported_quotas=[Quota.GENERAL],
+    )
+    with pytest.raises(ProviderRejectedError, match="not supported"):
+        await provider.get_availability(
+            AvailabilityQuery("12904", "NZM", "BDTS", date(2026, 9, 1), "3A", Quota.TATKAL)
+        )
+    assert router.requests == []

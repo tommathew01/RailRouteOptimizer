@@ -68,7 +68,7 @@ def _search_from_row(row: JourneySearchRow) -> SearchRecord:
         request_budget=row.request_budget,
         provider=row.provider,
         created_at=row.created_at,
-        quota=row.quota,
+        quotas=list(row.quotas) if row.quotas else [row.quota],
         status=SearchStatus(row.status),
         search_completeness=(
             SearchCompleteness(row.search_completeness) if row.search_completeness else None
@@ -157,6 +157,7 @@ class SqlAlchemyPersistence:
                     journey_date=search.journey_date,
                     classes=search.classes,
                     quota=search.quota,
+                    quotas=search.quotas,
                     filters=search.filters,
                     train_numbers=search.train_numbers,
                     max_segments=search.max_segments,

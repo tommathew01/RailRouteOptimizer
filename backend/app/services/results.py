@@ -15,11 +15,14 @@ from app.domain import disclaimers
 from app.domain.enums import (
     AvailabilityStatus,
     IncompleteReason,
+    Quota,
     SearchCompleteness,
     StatusTier,
     TravelClass,
 )
+from app.domain.quota_eligibility import QuotaEligibility, QuotaEligibilityState
 from app.domain.route import boards_on_other_calendar_day, scheduled_arrival, scheduled_departure
+from app.domain.time import IST
 from app.optimization.planner import ComboProgress
 from app.optimization.ranking import RankedPath
 from app.repositories.records import (
@@ -33,13 +36,15 @@ from app.schemas.journeys import (
     JourneyFilters,
     JourneySearchResponse,
     PredictionSummary,
+    QuotaSkipGroup,
+    QuotaSummary,
     RecommendationOut,
     SearchError,
     SearchRequestEcho,
     SegmentOut,
     TrainEvaluation,
 )
-from app.schemas.shared import FareOut, PredictionOut
+from app.schemas.shared import FareOut, PredictionOut, QuotaEligibilityOut
 from app.services.search_state import ComboContext, SearchContext, TrainContext
 
 TIER_LABELS = {
@@ -60,6 +65,17 @@ INCOMPLETE_MESSAGES = {
     IncompleteReason.PROVIDER_AUTH_ERROR: "The provider rejected our credentials; checks stopped.",
     IncompleteReason.PROVIDER_ERRORS: "Some provider checks failed or returned unclear answers.",
     IncompleteReason.SEARCH_DEADLINE_REACHED: "The search reached its time limit.",
+    IncompleteReason.QUOTA_NOT_QUERIED: (
+        "Some selected quotas were not checked (see the quota notes); the results cover only "
+        "what was checked."
+    ),
+}
+
+#: ClassEvaluation.state for a train x class x quota that was deliberately not queried.
+_SKIPPED_STATE = {
+    QuotaEligibilityState.NOT_YET_OPEN: "NOT_YET_OPEN",
+    QuotaEligibilityState.OPENS_TODAY: "NOT_YET_OPEN",
+    QuotaEligibilityState.PROVIDER_UNSUPPORTED: "QUOTA_NOT_SUPPORTED",
 }
 
 
@@ -94,6 +110,9 @@ def completeness(
         state, reason = SearchCompleteness.PARTIAL_PROVIDER_ERRORS, stats.stop_reason
     elif stats.segments_failed or stats.segments_unknown or stats.route_failures:
         state, reason = SearchCompleteness.PARTIAL_PROVIDER_ERRORS, IncompleteReason.PROVIDER_ERRORS
+    elif stats.combinations_not_queried:
+        state = SearchCompleteness.PARTIAL_QUOTA_NOT_QUERIED
+        reason = IncompleteReason.QUOTA_NOT_QUERIED
     else:
         state, reason = SearchCompleteness.COMPLETE, None
     if not has_recommendations:
@@ -146,10 +165,11 @@ def _segment_outs(ranked: RankedPath, combo: ComboContext) -> list[SegmentOut]:
 
 def _booking_steps(ranked: RankedPath, segments: list[SegmentOut]) -> list[str]:
     count = len(segments)
+    quota = ranked.key.quota
     steps = [
         f"Ticket {s.sequence + 1} of {count}: train {ranked.key.train_number}, "
         f"{s.source} → {s.destination}, departing {_fmt(s.departure)} IST, class "
-        f"{ranked.key.travel_class}, General (GN) quota."
+        f"{ranked.key.travel_class}, {quota.label} ({quota.value}) quota."
         for s in segments
     ]
     if count > 1:
@@ -176,6 +196,8 @@ def recommendation_outs(
                 train_name=combo.train.name,
                 travel_class=item.key.travel_class,
                 travel_class_label=class_label(item.key.travel_class),
+                quota=item.key.quota.value,
+                quota_label=item.key.quota.label,
                 train_start_date=item.key.train_start_date,
                 segment_count=item.path.segment_count,
                 status_tier=int(item.status_tier),
@@ -205,43 +227,61 @@ def _class_evaluations(
     ctx: SearchContext,
     progress: dict[int, ComboProgress],
     counts: dict[int, int],
+    combos: dict[tuple[int, str, Quota], ComboContext],
 ) -> list[ClassEvaluation]:
     evaluations = []
-    for travel_class in ctx.request.classes:
-        combo = next(
-            (c for c in ctx.combos.values() if c.train is train and c.travel_class == travel_class),
-            None,
-        )
-        if combo is None:
+    for quota in ctx.request.quotas:
+        for travel_class in ctx.request.classes:
+            eligibility = train.eligibility.get((travel_class, quota))
+            common = {
+                "travel_class": travel_class,
+                "quota": quota.value,
+                "quota_label": quota.label,
+                "eligibility": QuotaEligibilityOut.of(eligibility) if eligibility else None,
+            }
+            combo = combos.get((id(train), travel_class, quota))
+            if combo is None:
+                state = train.class_states.get(travel_class) or (
+                    _SKIPPED_STATE.get(eligibility.state, "NOT_QUERIED")
+                    if eligibility is not None and not eligibility.queryable
+                    else "NOT_EVALUATED"
+                )
+                evaluations.append(
+                    ClassEvaluation(
+                        **common,  # type: ignore[arg-type]
+                        state=state,  # type: ignore[arg-type]
+                        queried=False,
+                        depth_reached=0,
+                        best_status_tier=None,
+                        recommendations=0,
+                    )
+                )
+                continue
+            info = progress.get(combo.combo_id)
             evaluations.append(
                 ClassEvaluation(
-                    travel_class=travel_class,
-                    state=train.class_states.get(travel_class, "NOT_EVALUATED"),  # type: ignore[arg-type]
-                    depth_reached=0,
-                    best_status_tier=None,
-                    recommendations=0,
+                    **common,  # type: ignore[arg-type]
+                    state=info.state.value if info else "NOT_EVALUATED",
+                    queried=bool(info and info.edges_known),
+                    depth_reached=info.depth_reached if info else 0,
+                    best_status_tier=(
+                        int(info.best_complete_tier)
+                        if info and info.best_complete_tier is not None
+                        else None
+                    ),
+                    recommendations=counts.get(combo.combo_id, 0),
                 )
             )
-            continue
-        info = progress.get(combo.combo_id)
-        evaluations.append(
-            ClassEvaluation(
-                travel_class=travel_class,
-                state=info.state.value if info else "NOT_EVALUATED",
-                depth_reached=info.depth_reached if info else 0,
-                best_status_tier=(
-                    int(info.best_complete_tier)
-                    if info and info.best_complete_tier is not None
-                    else None
-                ),
-                recommendations=counts.get(combo.combo_id, 0),
-            )
-        )
     return evaluations
 
 
+def _progress(ctx: SearchContext) -> dict[int, ComboProgress]:
+    return {p.combo_id: p for p in ctx.planner.progress()} if ctx.planner else {}
+
+
 def train_evaluations(ctx: SearchContext, counts: dict[int, int]) -> list[TrainEvaluation]:
-    progress = {p.combo_id: p for p in ctx.planner.progress()} if ctx.planner else {}
+    progress = _progress(ctx)
+    combos = {(id(c.train), c.travel_class, c.quota): c for c in ctx.combos.values()}
     out = []
     for train in ctx.trains:
         departure = arrival = None
@@ -261,7 +301,94 @@ def train_evaluations(ctx: SearchContext, counts: dict[int, int]) -> list[TrainE
                 arrival=arrival,
                 intermediate_stops_total=journey.total_intermediate_stops if journey else 0,
                 intermediate_stops_considered=len(train.considered),
-                classes=_class_evaluations(train, ctx, progress, counts),
+                classes=_class_evaluations(train, ctx, progress, counts, combos),
+            )
+        )
+    return out
+
+
+def _when(moment: datetime) -> str:
+    return moment.astimezone(IST).strftime("%d %b %Y at %H:%M IST")
+
+
+def _skip_message(quota: Quota, state: QuotaEligibilityState, items: list[QuotaEligibility]) -> str:
+    name = f"{quota.label} ({quota.value})"
+    n = len(items)
+    combos = f"{n} train/class combination{'s' if n != 1 else ''}"
+    classes = ", ".join(sorted({e.travel_class for e in items}))
+    states = QuotaEligibilityState
+    if state in (states.NOT_YET_OPEN, states.OPENS_TODAY):
+        first = min(e.opens_at for e in items if e.opens_at is not None)
+        return (
+            f"{name} was not checked for {combos}: booking is not open yet (first opening "
+            f"{_when(first)}). It is not re-checked automatically — search again after it opens."
+        )
+    if state is states.PROVIDER_UNSUPPORTED:
+        return _unsupported_message(quota)
+    if state is states.CLASS_CATEGORY_UNKNOWN:
+        return (
+            f"{name} was not checked for class {classes}: its AC/non-AC category is unknown, so "
+            "the booking opening time cannot be determined."
+        )
+    if state is states.JOURNEY_DATE_PASSED:
+        return f"{name} was not checked for {combos}: the journey date has passed."
+    return (
+        f"{name} was not checked for {combos}: the train's origin date could not be determined, "
+        "so the booking opening time is unknown."
+    )
+
+
+def _unsupported_message(quota: Quota) -> str:
+    return (
+        f"{quota.label} ({quota.value}) is not supported by the railway data provider, so it was "
+        "not checked. No other quota was substituted."
+    )
+
+
+def quota_summaries(
+    ctx: SearchContext, counts: dict[int, int], provider_quotas: frozenset[Quota]
+) -> list[QuotaSummary]:
+    progress = _progress(ctx)
+    out = []
+    for quota in ctx.request.quotas:
+        combos = [c for c in ctx.combos.values() if c.quota is quota]
+        skipped = [
+            e
+            for train in ctx.trains
+            for (_, q), e in train.eligibility.items()
+            if q is quota and not e.queryable
+        ]
+        groups: dict[QuotaEligibilityState, list[QuotaEligibility]] = {}
+        for item in skipped:
+            groups.setdefault(item.state, []).append(item)
+        out.append(
+            QuotaSummary(
+                quota=quota.value,
+                quota_label=quota.label,
+                provider_supported=quota in provider_quotas,
+                queried=any(
+                    (info := progress.get(c.combo_id)) is not None and info.edges_known > 0
+                    for c in combos
+                ),
+                combinations_eligible=len(combos),
+                combinations_not_queried=len(skipped),
+                next_opening_at=min(
+                    (e.opens_at for e in skipped if e.awaiting_opening and e.opens_at),
+                    default=None,
+                ),
+                not_queried=[
+                    QuotaSkipGroup(
+                        state=state.value,
+                        combinations=len(items),
+                        travel_classes=sorted({e.travel_class for e in items}),
+                        opens_at=min(
+                            (e.opens_at for e in items if e.opens_at is not None), default=None
+                        ),
+                        message=_skip_message(quota, state, items),
+                    )
+                    for state, items in groups.items()
+                ],
+                recommendations=sum(counts.get(c.combo_id, 0) for c in combos),
             )
         )
     return out
@@ -275,6 +402,7 @@ def coverage(ctx: SearchContext) -> Coverage:
         trains_found=ctx.stats.trains_found,
         trains_evaluated=sum(1 for t in ctx.trains if t.evaluation == "EVALUATED"),
         combinations_evaluated=len(ctx.combos),
+        combinations_not_queried=ctx.stats.combinations_not_queried,
         availability_requests_planned=made + ctx.stats.cache_hits + outstanding,
         availability_requests_made=made,
         request_budget=ctx.budget.limit,
@@ -293,12 +421,17 @@ def warnings_for(
     *,
     demo: bool,
     date_policy_verified: bool,
+    quotas: list[QuotaSummary] | None = None,
 ) -> list[str]:
     notes: list[str] = []
     if demo:
         notes.append(disclaimers.DEMO_MODE)
     notes.extend(ctx.request.notes)
     notes.extend(ctx.warnings)
+    for summary in quotas or []:
+        if not summary.provider_supported:
+            notes.append(_unsupported_message(Quota(summary.quota)))
+        notes.extend(group.message for group in summary.not_queried)
     if reason is not None:
         notes.append(INCOMPLETE_MESSAGES[reason])
     if state is SearchCompleteness.NO_PATH_FOUND_PARTIAL:
@@ -322,6 +455,7 @@ def build_response(
     data_mode: str,
     stale_after_seconds: int,
     date_policy_verified: bool,
+    provider_quotas: frozenset[Quota] = frozenset({Quota.GENERAL}),
     error: SearchError | None = None,
 ) -> JourneySearchResponse:
     request = SearchRequestEcho(
@@ -329,10 +463,13 @@ def build_response(
         destination=record.destination,
         journey_date=record.journey_date,
         classes=record.classes,
+        quota=record.quotas[0],  # type: ignore[arg-type]
+        quotas=record.quotas,  # type: ignore[arg-type]
         filters=JourneyFilters(**record.filters),
         max_segments=record.max_segments,
         train_numbers=record.train_numbers,
     )
+    summaries = quota_summaries(ctx, counts, provider_quotas) if ctx else []
     warnings = (
         warnings_for(
             ctx,
@@ -341,6 +478,7 @@ def build_response(
             record.incomplete_reason,
             demo=data_mode == "DEMO",
             date_policy_verified=date_policy_verified,
+            quotas=summaries,
         )
         if ctx
         else ([disclaimers.DEMO_MODE] if data_mode == "DEMO" else []) + list(disclaimers.ALWAYS)
@@ -358,6 +496,7 @@ def build_response(
         incomplete_reason=record.incomplete_reason.value if record.incomplete_reason else None,
         coverage=coverage(ctx) if ctx else None,
         trains=train_evaluations(ctx, counts) if ctx else [],
+        quotas=summaries,
         recommendations=recommendations,
         warnings=warnings,
         error=error,

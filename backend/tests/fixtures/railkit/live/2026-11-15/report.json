@@ -1,0 +1,72 @@
+[
+  {
+    "probe": "seat_12904_ASR_LDH_3A_TQ",
+    "echo": {
+      "trainNo": "12904",
+      "trainName": "GOLDEN TEMPLE M",
+      "from": "ASR",
+      "to": "LDH",
+      "fromStationName": "Amritsar Junction",
+      "toStationName": "Ludhiana Junction",
+      "distance": 136,
+      "travelClass": "3A",
+      "quota": "TQ"
+    },
+    "fare": {
+      "baseFare": 729,
+      "reservationCharge": 40,
+      "superfastCharge": 45,
+      "serviceTax": 56,
+      "totalFare": 1170
+    },
+    "first_entries": [
+      {
+        "date": "16-11-2026",
+        "status": "AVAILABLE",
+        "availabilityText": "AVL 26",
+        "rawStatus": "AVAILABLE-0026",
+        "prediction": "Available",
+        "predictionPercentage": 100,
+        "canBook": true
+      }
+    ]
+  },
+  {
+    "probe": "seat_12904_ASR_LDH_3A_PT",
+    "error_category": "REJECTED",
+    "status_code": 400,
+    "message": "Quota not allowed"
+  },
+  {
+    "probe": "seat_12904_ASR_LDH_SL_TQ",
+    "echo": {
+      "trainNo": "12904",
+      "trainName": "GOLDEN TEMPLE M",
+      "from": "ASR",
+      "to": "LDH",
+      "fromStationName": "Amritsar Junction",
+      "toStationName": "Ludhiana Junction",
+      "distance": 136,
+      "travelClass": "SL",
+      "quota": "TQ"
+    },
+    "fare": {
+      "baseFare": 290,
+      "reservationCharge": 20,
+      "superfastCharge": 30,
+      "serviceTax": 0,
+      "totalFare": 440
+    },
+    "first_entries": [
+      {
+        "date": "16-11-2026",
+        "status": "AVAILABLE",
+        "availabilityText": "AVL 32",
+        "rawStatus": "AVAILABLE-0032",
+        "prediction": "Available",
+        "predictionPercentage": 100,
+        "canBook": true
+      }
+    ]
+  }
+]

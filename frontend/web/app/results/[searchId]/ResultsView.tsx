@@ -4,12 +4,19 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { BookingGuidance, CoverageNotice, RecommendationCard, SearchProgress } from "@/components/Results";
+import {
+  BookingGuidance,
+  CoverageNotice,
+  QuotaStatus,
+  RecommendationCard,
+  SearchProgress,
+} from "@/components/Results";
 import { Notice } from "@/components/StatusBits";
 import { ApiError } from "@/lib/api/client";
 import { journeySearchQuery, startOptimization } from "@/lib/api/queries";
 import type { JourneySearch } from "@/lib/api/schemas";
 import { formatCalendarDate, formatTime } from "@/lib/format";
+import { classEvaluationText, quotaList } from "@/lib/quotas";
 import { journeyQueryString } from "@/lib/search-params";
 
 const EVALUATION_TEXT: Record<string, string> = {
@@ -19,15 +26,6 @@ const EVALUATION_TEXT: Record<string, string> = {
   DIFFERENT_STATIONS: "Serves different stations — skipped",
   NOT_IN_TRAIN_SEARCH: "Not found for this date",
   SKIPPED_TRAIN_LIMIT: "Not checked (train limit)",
-};
-
-const CLASS_STATE_TEXT: Record<string, string> = {
-  SOLVED: "best option found",
-  EXHAUSTED: "fully explored",
-  STOPPED: "stopped early",
-  ACTIVE: "in progress",
-  NOT_OFFERED: "class not offered",
-  NOT_EVALUATED: "not checked",
 };
 
 export function ResultsView({ searchId }: { searchId: string }) {
@@ -68,6 +66,7 @@ function ResultsBody({ search }: { search: JourneySearch }) {
         classes: request.classes,
         filters: request.filters,
         train_numbers: request.train_numbers ?? undefined,
+        quotas: request.quotas,
       }),
     onSuccess: ({ searchId }) => router.push(`/results/${searchId}`),
   });
@@ -76,6 +75,7 @@ function ResultsBody({ search }: { search: JourneySearch }) {
     to: request.destination,
     date: request.journey_date,
     classes: request.classes,
+    quotas: request.quotas,
     rac: request.filters.allow_rac,
     wl: request.filters.allow_waitlist,
   })}`;
@@ -90,8 +90,9 @@ function ResultsBody({ search }: { search: JourneySearch }) {
               <span className="sr-only"> to </span> {request.destination}
             </h1>
             <p className="text-muted">
-              {formatCalendarDate(request.journey_date)} · {request.classes.join(", ")} · General
-              quota · up to {request.max_segments} tickets
+              {formatCalendarDate(request.journey_date)} · {request.classes.join(", ")} ·{" "}
+              {quotaList(request.quotas)} quota{request.quotas.length === 1 ? "" : "s"} · up to{" "}
+              {request.max_segments} tickets
               {request.filters.allow_rac ? " · RAC allowed" : ""}
               {request.filters.allow_waitlist ? " · waitlist allowed" : ""}
             </p>
@@ -123,6 +124,7 @@ function ResultsBody({ search }: { search: JourneySearch }) {
           </Notice>
         ) : null}
         {search.status === "COMPLETED" ? <CoverageNotice search={search} /> : null}
+        <QuotaStatus search={search} />
 
         <section aria-labelledby="results-title" aria-live="polite">
           <h2 id="results-title" className="mb-3 text-lg font-semibold">
@@ -138,7 +140,7 @@ function ResultsBody({ search }: { search: JourneySearch }) {
           ) : (
             <ol className="space-y-4">
               {search.recommendations.map((rec) => (
-                <li key={`${rec.train_number}-${rec.travel_class}-${rec.rank}`}>
+                <li key={`${rec.train_number}-${rec.travel_class}-${rec.quota}-${rec.rank}`}>
                   <RecommendationCard recommendation={rec} staleAfter={search.stale_after_seconds} />
                 </li>
               ))}
@@ -166,7 +168,7 @@ function ResultsBody({ search }: { search: JourneySearch }) {
                   ) : null}
                   <p className="text-muted">
                     {train.classes
-                      .map((c) => `${c.travel_class}: ${CLASS_STATE_TEXT[c.state] ?? c.state}`)
+                      .map((c) => classEvaluationText(c, request.quotas.length > 1))
                       .join(" · ")}
                   </p>
                 </li>

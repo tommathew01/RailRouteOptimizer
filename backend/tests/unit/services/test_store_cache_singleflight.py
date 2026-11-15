@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import uuid
+from dataclasses import replace
 from datetime import UTC, date, datetime, time
 from decimal import Decimal
 
@@ -12,7 +13,7 @@ from app.cache import keys
 from app.cache.singleflight import SingleFlight
 from app.cache.store import MemoryStore, NamespacedStore, StoreError
 from app.cache.typed_cache import TypedCache
-from app.domain.enums import AvailabilityStatus
+from app.domain.enums import AvailabilityStatus, Quota
 from app.domain.models import (
     AvailabilityRecord,
     Fare,
@@ -234,3 +235,16 @@ async def test_lock_wait_timeout_falls_back_to_computing() -> None:
     )
     value = await flight.run("k", compute=lambda: asyncio.sleep(0, "mine"), load_cached=load_cached)
     assert value == ("mine", False)
+
+
+def test_availability_cache_key_separates_every_quota() -> None:
+    base = SegmentKey("12904", date(2026, 11, 16), "ASR", "LDH", "3A")
+    cache_keys = {
+        quota: keys.availability("RAILKIT", replace(base, quota=quota), date(2026, 11, 16))
+        for quota in Quota
+    }
+    assert len(set(cache_keys.values())) == len(Quota)
+    assert cache_keys[Quota.TATKAL] == (
+        "availability:RAILKIT:12904:2026-11-16:2026-11-16:ASR:LDH:3A:TQ"
+    )
+    assert cache_keys[Quota.GENERAL].endswith(":3A:GN")

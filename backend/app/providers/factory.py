@@ -6,6 +6,7 @@ import httpx
 
 from app.core.clock import Clock
 from app.core.config import ProviderName, Settings
+from app.domain.enums import Quota
 from app.integrations.railkit.client import RailKitHttpClient
 from app.integrations.railkit.provider import RailKitProvider
 from app.providers.base import ProviderRequestObserver, RailwayProvider
@@ -44,4 +45,5 @@ def build_provider(
         clock=clock,
         fare_currency=settings.railkit_fare_currency,
         secret_fragments=settings.secret_values,
+        supported_quotas=[Quota(code) for code in settings.railkit_supported_quotas],
     )

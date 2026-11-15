@@ -17,7 +17,9 @@ Commercial railway ticket availability optimization platform.
 ## Finalized Business Decisions
 
 1. Users select their preferred travel classes.
-2. General quota (GN) only for MVP.
+2. Quotas: General (GN) by default; Tatkal (TQ) selectable (2026-11-15, docs/08 D-20…D-26).
+   TQ is queried only once its booking window (train origin date − 1 day, 10:00 AC /
+   11:00 non-AC IST) is open. Premium Tatkal (PT) is not offered: RailKit rejects it.
 3. All segments must belong to the same train.
 4. Maximum 4 ticket segments per journey.
 5. Passenger count is not required as user input.
@@ -51,7 +53,7 @@ Commercial railway ticket availability optimization platform.
 - Generate valid paths from source to destination.
 - Never exceed 4 segments.
 - Every segment must belong to the same train,
-  journey and compatible travel class/quota.
+  journey, travel class and quota (quotas are separate search spaces).
 - Rank using actual availability first.
 - Use provider prediction as a secondary ranking factor.
 - Minimize the number of separate tickets.

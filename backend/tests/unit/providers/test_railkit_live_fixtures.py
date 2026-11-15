@@ -13,7 +13,7 @@ from typing import Any
 
 import pytest
 
-from app.domain.enums import AvailabilityStatus
+from app.domain.enums import AvailabilityStatus, Quota
 from app.domain.models import AvailabilityQuery
 from app.domain.route import analyze_route, departure_day, validate_journey
 from app.integrations.railkit.mapper import map_availability, map_train_route, map_train_search
@@ -118,3 +118,46 @@ def test_live_route_is_verified_and_stop_only() -> None:
     assert journey.source_index is not None
     assert departure_day(analysis, journey.source_index) == 1  # boards NZM on the train's day 2
     assert validate_journey(analysis, "NDLS", "BDTS").verified is False  # 12904 skips NDLS
+
+
+# --- Quota probe, 2026-11-15 (12904 ASR→LDH, origin date 16 Nov, Tatkal window open) -------------
+QUOTA_LIVE = FIXTURES / "live" / "2026-11-15"
+
+
+def quota_live(name: str) -> Any:
+    return json.loads((QUOTA_LIVE / name).read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize(
+    ("name", "travel_class", "raw", "total"),
+    [
+        ("seat_12904_ASR_LDH_3A_TQ.json", "3A", "AVAILABLE-0026", Decimal("1170.00")),
+        ("seat_12904_ASR_LDH_SL_TQ.json", "SL", "AVAILABLE-0032", Decimal("440.00")),
+    ],
+)
+def test_tatkal_availability_maps_with_quota_echo_and_tatkal_fare(
+    name: str, travel_class: str, raw: str, total: Decimal
+) -> None:
+    data = quota_live(name)["data"]
+    assert data["train"]["quota"] == "TQ"
+    assert [entry["date"] for entry in data["availability"]] == ["16-11-2026"]  # one date only
+    query = AvailabilityQuery("12904", "ASR", "LDH", date(2026, 11, 16), travel_class, Quota.TATKAL)
+    record = map_availability(data, query, fare_currency="INR")
+    assert (record.status, record.raw_status) == (AvailabilityStatus.AVAILABLE, raw)
+    assert record.fare is not None
+    assert record.fare.amount == total
+    assert record.anomalies == ()
+
+
+def test_tatkal_payload_is_never_accepted_as_general() -> None:
+    data = quota_live("seat_12904_ASR_LDH_3A_TQ.json")["data"]
+    general = AvailabilityQuery("12904", "ASR", "LDH", date(2026, 11, 16), "3A")
+    with pytest.raises(ProviderInvalidResponseError, match="quota"):
+        map_availability(data, general, fare_currency="INR")
+
+
+def test_quota_probe_report_records_premium_tatkal_rejection() -> None:
+    report = {entry["probe"]: entry for entry in quota_live("report.json")}
+    premium = report["seat_12904_ASR_LDH_3A_PT"]
+    assert (premium["status_code"], premium["message"]) == (400, "Quota not allowed")
+    assert report["seat_12904_ASR_LDH_3A_TQ"]["echo"]["quota"] == "TQ"

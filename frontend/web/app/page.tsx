@@ -5,7 +5,7 @@ import { HomeSearch } from "./HomeSearch";
 const STEPS = [
   {
     title: "Pick your train journey",
-    body: "Choose stations, date and one or more classes. Quota is always General (GN).",
+    body: "Choose stations, date, classes and quotas: General by default, Tatkal once its booking window opens.",
   },
   {
     title: "We check shorter segments",

@@ -9,6 +9,7 @@ from typing import Annotated, Literal
 from pydantic import BeforeValidator, Field, PlainSerializer, StringConstraints
 
 from app.domain.models import AvailabilityRecord, Fare, Prediction
+from app.domain.quota_eligibility import QuotaEligibility, describe_eligibility
 from app.schemas.common import ApiModel
 
 
@@ -40,10 +41,60 @@ IgnoredQuota = Annotated[
     str | None,
     Field(
         default=None,
-        description="Ignored. General quota (GN) is always enforced by the server.",
+        description="Deprecated and ignored (predates quota selection). Use `quotas`.",
         json_schema_extra={"deprecated": True},
     ),
 ]
+QuotaLiteral = Literal["GN", "TQ"]
+QuotaCode = Annotated[
+    QuotaLiteral,
+    BeforeValidator(_upper),
+    Field(
+        description="Reservation quota: GN (General) or TQ (Tatkal).",
+        examples=["GN"],
+    ),
+]
+EligibilityState = Literal[
+    "NOT_APPLICABLE",
+    "NOT_YET_OPEN",
+    "OPENS_TODAY",
+    "OPEN",
+    "OPENING_PASSED",
+    "JOURNEY_DATE_PASSED",
+    "CLASS_CATEGORY_UNKNOWN",
+    "UNDETERMINED",
+    "PROVIDER_UNSUPPORTED",
+]
+
+
+class QuotaEligibilityOut(ApiModel):
+    """Whether RailRoute may query a quota now. Says nothing about availability."""
+
+    quota: QuotaLiteral
+    state: EligibilityState
+    queryable: bool = Field(description="True when the provider may be asked for this quota.")
+    class_category: Literal["AC", "NON_AC"] | None = Field(
+        description="Category that sets the opening time; null when the class is unclassified."
+    )
+    train_origin_date: date | None = Field(
+        description="Date the train leaves its origin station: the booking window's anchor."
+    )
+    opens_at: datetime | None = Field(description="Booking window opening (Asia/Kolkata).")
+    message: str
+
+    @classmethod
+    def of(cls, eligibility: QuotaEligibility) -> QuotaEligibilityOut:
+        return cls(
+            quota=eligibility.quota.value,
+            state=eligibility.state.value,
+            queryable=eligibility.queryable,
+            class_category=(
+                eligibility.class_category.value if eligibility.class_category else None
+            ),
+            train_origin_date=eligibility.train_origin_date,
+            opens_at=eligibility.opens_at,
+            message=describe_eligibility(eligibility),
+        )
 
 
 class AvailabilityOut(ApiModel):

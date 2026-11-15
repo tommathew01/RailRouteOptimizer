@@ -3,9 +3,14 @@
 Railway availability discovery and **same-train segment optimization** for Indian Railways.
 
 When a direct reservation is waitlisted or unavailable, RailRoute checks shorter
-station-to-station reservations on the **same train, date, class and General (GN) quota** and
-finds combinations of **1–4 separate tickets** that cover the whole journey, e.g.
+station-to-station reservations on the **same train, date, class and quota** and finds combinations
+of **1–4 separate tickets** that cover the whole journey, e.g.
 `TIR → SRR` + `SRR → TCR` + `TCR → TVC`.
+
+Quotas: **General (GN)** by default; **Tatkal (TQ)** can be added. Each
+quota is searched separately and never mixed. Tatkal quotas are only checked once their booking
+window is open (1 day before the train leaves its **origin** station, 10:00 IST for AC / 11:00 IST
+for non-AC classes); before that RailRoute shows "not checked — opens at …", never "unavailable".
 
 > RailRoute does not book tickets. Each segment is a separate reservation and may produce a
 > separate PNR. It is independent and not affiliated with Indian Railways or IRCTC.
@@ -95,6 +100,8 @@ Every variable is documented in [`.env.example`](.env.example) and validated at 
 | `PROVIDER_MONTHLY_REQUEST_LIMIT` | `50` | global guard; set to your RailKit plan |
 | `AVAILABILITY_DATE_POLICY` | `SEGMENT_BOARDING_DATE` | date sent for segments boarding after midnight (docs/08 D-02) |
 | `AVAILABILITY_CACHE_TTL_SECONDS` | `120` | pending RailKit caching terms |
+| `RAILKIT_SUPPORTED_QUOTAS` | `GN,TQ` | quotas RailKit accepts (docs/09 Q16); drop `TQ` to disable Tatkal |
+| `TATKAL_*` | 1 day, 10:00 / 11:00 | booking window relative to the train's origin date (IST) |
 | `SEARCH_EXECUTION_MODE` | `async` | `202 Accepted` + polling; `sync` for tests |
 
 ## Repository layout
@@ -119,9 +126,9 @@ compose.yaml        Local stack (PostgreSQL, Redis; app services under the "app"
 | 6. Frontend | ✅ done |
 | 7. Hardening | ✅ done (see `docs/10_OPERATIONS_RUNBOOK.md`) |
 
-Verification at the time of writing: backend 329 unit/API tests + 11 PostgreSQL/Redis integration
-tests (ruff, mypy `--strict`), frontend 25 Vitest tests, 12 Playwright tests (desktop + mobile,
-axe WCAG 2.1 AA), and the same Playwright suite against the Docker Compose stack.
+Verification at the time of writing (2026-11-15, after Tatkal support): backend 420
+unit/API tests + 12 PostgreSQL/Redis integration tests (ruff, mypy `--strict`, `alembic check`),
+frontend 39 Vitest tests, 18 Playwright tests (desktop + mobile, axe WCAG 2.1 AA).
 
 ## Known limitations
 
@@ -139,6 +146,9 @@ axe WCAG 2.1 AA), and the same Playwright suite against the Docker Compose stack
 
 - RailKit's Free plan only accepts SDK-signed requests; the backend needs a plan with
   "API endpoint access". A few contract details remain unverified (docs/09 §5: Q10, Q12, Q13).
+- Premium Tatkal (`PT`) is not offered: RailKit's seat availability rejects it (docs/09 Q16).
+  Tatkal windows are RailRoute configuration, not provider data; a quota that was not open is not
+  re-checked automatically.
 - RailKit's train search matches station clusters (NDLS also finds NZM/DEE trains). Recommendations
   always use the exact searched stations; the UI offers a search for each train's own stations.
 - RailKit's caching, storage and commercial-redistribution terms are unconfirmed; this is a

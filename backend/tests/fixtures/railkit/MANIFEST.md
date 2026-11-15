@@ -26,5 +26,9 @@ the only base shape is the documented one.
 | `live/2026-11-14/seat_availability_after_midnight_boarding_date.json` | Live run 2: 12248 RTM→BDTS, CC, GN, sent 29-11-2026 (boarding date at RTM) |
 | `live/2026-11-14/report.json` | Live run 2 probe report (Q1 verdict `SEGMENT_BOARDING_DATE`) |
 
+| `live/2026-11-15/seat_12904_ASR_LDH_3A_TQ.json` | Quota probe, 2026-11-15 13:13 IST: 12904 ASR→LDH, 3A, **TQ**, sent 16-11-2026 (Tatkal window open) |
+| `live/2026-11-15/seat_12904_ASR_LDH_SL_TQ.json` | Same probe: SL, **TQ** |
+| `live/2026-11-15/report.json` | Quota probe report; includes the PT probe (3A, **PT**) answered `400 Quota not allowed` |
+
 Run 1's direct availability capture (12904 NZM→BDTS 3A) was overwritten by run 2. Live runs
 now write to `live/run-<UTC timestamp>/`; promote files to a dated folder deliberately.

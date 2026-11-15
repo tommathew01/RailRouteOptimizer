@@ -103,6 +103,25 @@ async def test_search_lifecycle_round_trip(persistence: SqlAlchemyPersistence) -
     assert await persistence.get_search(uuid.uuid4()) is None
 
 
+async def test_selected_quotas_and_quota_completeness_round_trip(
+    persistence: SqlAlchemyPersistence,
+) -> None:
+    search = search_record()
+    search.quotas = ["GN", "TQ"]
+    await persistence.create_search(search)
+    search.search_completeness = SearchCompleteness.PARTIAL_QUOTA_NOT_QUERIED
+    search.incomplete_reason = IncompleteReason.QUOTA_NOT_QUERIED
+    await persistence.save_search(search)
+    loaded = await persistence.get_search(search.id)
+    assert loaded is not None
+    assert (loaded.quotas, loaded.quota) == (["GN", "TQ"], "GN")
+    assert loaded.search_completeness is SearchCompleteness.PARTIAL_QUOTA_NOT_QUERIED
+    assert loaded.incomplete_reason is IncompleteReason.QUOTA_NOT_QUERIED
+    legacy = search_record()  # rows written before quota selection default to General
+    await persistence.create_search(legacy)
+    assert (await persistence.get_search(legacy.id)).quotas == ["GN"]  # type: ignore[union-attr]
+
+
 async def test_unfinished_searches_are_failed_on_restart(
     persistence: SqlAlchemyPersistence,
 ) -> None:

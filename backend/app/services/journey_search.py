@@ -1,9 +1,12 @@
 """Journey search orchestration (doc 02 §6-7).
 
 submit → persist QUEUED → executor runs:
-  train discovery → route retrieval + validation → train x class combinations → adaptive planner
-  waves (bounded concurrency, budget, deadline) → graph → paths → ranking → completeness →
-  persisted snapshot + normalized recommendation rows.
+  train discovery → route retrieval + validation → train x class x quota combinations (quotas whose
+  booking window is not open are recorded, never queried) → adaptive planner waves (bounded
+  concurrency, budget, deadline) → graph → paths → ranking → completeness → persisted snapshot +
+  normalized recommendation rows.
+
+Every quota is a separate search space: a combination, its graph and its paths carry one quota.
 
 Partial results are published after every wave; provider failures never erase successful
 observations, and failed or unqueried segments are never treated as unavailable.
@@ -24,6 +27,7 @@ from app.core.config import Settings
 from app.core.context import search_id_var
 from app.core.errors import InvalidRequestError, SemanticValidationError, require
 from app.domain.enums import (
+    QUOTA_ORDER,
     AvailabilityDatePolicy,
     AvailabilityStatus,
     IncompleteReason,
@@ -56,6 +60,7 @@ from app.services.availability import (
 )
 from app.services.executor import SearchExecutor
 from app.services.quota import QuotaRefusal, SearchBudget
+from app.services.quota_eligibility import QuotaEligibilityService
 from app.services.search_state import (
     ComboContext,
     JourneyRequest,
@@ -91,6 +96,7 @@ class JourneySearchService:
         clock: Clock,
         trains: TrainService,
         availability: AvailabilityService,
+        eligibility: QuotaEligibilityService,
         persistence: Persistence,
         executor: SearchExecutor,
         provider_name: str,
@@ -100,6 +106,7 @@ class JourneySearchService:
         self._clock = clock
         self._trains = trains
         self._availability = availability
+        self._eligibility = eligibility
         self._persistence = persistence
         self._executor = executor
         self._provider_name = provider_name
@@ -119,15 +126,39 @@ class JourneySearchService:
         max_segments: int,
         train_numbers: list[str] | None,
         client_quota: str | None,
+        quotas: list[str] | None = None,
     ) -> JourneyRequest:
-        """Apply server policy: date window, supported classes, segment clamp, forced GN quota."""
+        """Apply server policy: date window, supported classes, segment clamp, quota order.
+
+        ``quotas`` defaults to General. The deprecated single ``client_quota`` field is ignored
+        (it predates quota selection), with a note when it asked for something not searched.
+        """
         validate_trip(self._settings, self._clock, source, destination, journey_date, classes)
         notes: list[str] = []
         limit = min(self._settings.max_segments, MAX_SEGMENTS)
         if max_segments > limit:
             notes.append(f"max_segments {max_segments} was reduced to the server limit of {limit}.")
-        if client_quota and client_quota.strip().upper() != Quota.GENERAL.value:
-            notes.append("Only General (GN) quota is supported; the requested quota was ignored.")
+        selected = normalize_quotas(quotas)
+        supported = [q for q in selected if self._eligibility.is_supported(q)]
+        if not supported:  # nothing could be queried: refuse before spending provider requests
+            raise SemanticValidationError(
+                "The selected quota is not supported by the railway data provider: "
+                + ", ".join(f"{q.label} ({q.value})" for q in selected)
+                + ". No other quota was substituted.",
+                code="QUOTA_NOT_SUPPORTED",
+                details={
+                    "requested_quotas": [q.value for q in selected],
+                    "supported_quotas": [
+                        q.value for q in QUOTA_ORDER if self._eligibility.is_supported(q)
+                    ],
+                },
+            )
+        if client_quota and client_quota.strip().upper() not in {q.value for q in selected}:
+            notes.append(
+                "The deprecated 'quota' field was ignored; searched quota(s): "
+                + ", ".join(q.value for q in selected)
+                + ". Use 'quotas' to choose GN or TQ."
+            )
         if train_numbers and len(train_numbers) > self._settings.search_max_trains:
             raise InvalidRequestError(
                 f"Select at most {self._settings.search_max_trains} trains per search.",
@@ -142,6 +173,7 @@ class JourneySearchService:
             max_segments=min(max_segments, limit),
             train_numbers=tuple(train_numbers) if train_numbers else None,
             notes=tuple(notes),
+            quotas=selected,
         )
 
     async def submit(self, request: JourneyRequest) -> SearchRecord:
@@ -157,6 +189,7 @@ class JourneySearchService:
                 "allow_waitlist": request.filters.allow_waitlist,
             },
             train_numbers=list(request.train_numbers) if request.train_numbers else None,
+            quotas=[q.value for q in request.quotas],
             max_segments=request.max_segments,
             request_budget=self._settings.search_max_availability_requests,
             provider=self._provider_name,
@@ -353,8 +386,14 @@ class JourneySearchService:
         ctx.trains.extend(await asyncio.gather(*(load(s) for s in selected)))
 
     def _prepare_combinations(self, ctx: SearchContext) -> None:
-        specs: list[ComboSpec] = []
+        """Turn every offered train x class x quota whose booking window allows it into a
+        planner combination. Quota-major order: General combinations come first, exactly as in
+        a General-only search; skipped quotas are recorded with their eligibility, never queried.
+        """
+        request = ctx.request
         cap = self._settings.planner_max_intermediate_stops
+        now = self._eligibility.now()  # one instant for every combination of this search
+        layouts: list[tuple[TrainContext, int, int, tuple[int, ...], dict[int, float]]] = []
         for train in ctx.trains:
             journey, route = train.journey, train.route
             if train.evaluation != "EVALUATED" or journey is None or route is None:
@@ -366,25 +405,45 @@ class JourneySearchService:
                 + 0.001 * min(index - source, destination - index)
                 for index in journey.intermediate_indices
             }
-            considered = sorted(
-                sorted(journey.intermediate_indices, key=lambda i: (-weights[i], i))[:cap]
+            considered = tuple(
+                sorted(sorted(journey.intermediate_indices, key=lambda i: (-weights[i], i))[:cap])
             )
-            train.considered = tuple(considered)
-            for travel_class in ctx.request.classes:
+            train.considered = considered
+            layouts.append((train, source, destination, considered, weights))
+            for travel_class in request.classes:
                 if route.classes is not None and travel_class not in route.classes:
                     train.class_states[travel_class] = "NOT_OFFERED"
                     continue
-                combo_id = len(ctx.combos)
-                ctx.combos[combo_id] = ComboContext(combo_id, train, travel_class)
-                specs.append(
-                    ComboSpec(
-                        combo_id,
-                        source,
-                        destination,
-                        tuple(considered),
-                        {i: weights[i] for i in considered},
+                for quota in request.quotas:
+                    train.eligibility[(travel_class, quota)] = self._eligibility.evaluate(
+                        quota,
+                        travel_class,
+                        train_origin_date=train.start_date,  # never the boarding date
+                        boarding_date=request.journey_date,
+                        now=now,
                     )
-                )
+
+        specs: list[ComboSpec] = []
+        for quota in request.quotas:
+            for train, source, destination, considered, weights in layouts:
+                for travel_class in request.classes:
+                    eligibility = train.eligibility.get((travel_class, quota))
+                    if eligibility is None:  # class not offered by this train
+                        continue
+                    if not eligibility.queryable:
+                        ctx.stats.combinations_not_queried += 1
+                        continue
+                    combo_id = len(ctx.combos)
+                    ctx.combos[combo_id] = ComboContext(combo_id, train, travel_class, quota)
+                    specs.append(
+                        ComboSpec(
+                            combo_id,
+                            source,
+                            destination,
+                            considered,
+                            {i: weights[i] for i in considered},
+                        )
+                    )
         not_offered = sorted(
             {c for t in ctx.trains for c, s in t.class_states.items() if s == "NOT_OFFERED"}
         )
@@ -395,7 +454,7 @@ class JourneySearchService:
                 + "."
             )
         ctx.planner = QueryPlanner(
-            specs, filters=ctx.request.filters, max_segments=ctx.request.max_segments
+            specs, filters=request.filters, max_segments=request.max_segments
         )
 
     def _segment_request(self, ctx: SearchContext, query: PlannedQuery) -> SegmentRequest:
@@ -411,7 +470,7 @@ class JourneySearchService:
             stops[query.from_index].station_code,
             stops[query.to_index].station_code,
             combo.travel_class,
-            Quota.GENERAL,
+            combo.quota,
         )
         policy: AvailabilityDatePolicy = self._settings.availability_date_policy
         return SegmentRequest(key, provider_query_date(start, analysis, query.from_index, policy))
@@ -500,7 +559,7 @@ class JourneySearchService:
             source = require(journey.source_index, "source index")
             destination = require(journey.destination_index, "destination index")
             index = {train.route.stops[i].station_code: i for i in journey.boundary_indices}
-            key = GraphKey(train.train_number, train.start_date, combo.travel_class)
+            key = GraphKey(train.train_number, train.start_date, combo.travel_class, combo.quota)
             graph = build_graph(key, combo.observations.values(), index, ctx.request.filters)
             for path in find_paths(
                 graph,
@@ -542,8 +601,26 @@ class JourneySearchService:
             data_mode=self._data_mode,
             stale_after_seconds=self._settings.stale_after_seconds,
             date_policy_verified=self._settings.availability_date_policy_verified,
+            provider_quotas=frozenset(q for q in QUOTA_ORDER if self._eligibility.is_supported(q)),
             error=error,
         )
+
+
+def normalize_quotas(quotas: list[str] | None) -> tuple[Quota, ...]:
+    """Requested quota codes in canonical order (GN, TQ); General when none were given."""
+    if not quotas:
+        return (Quota.GENERAL,)
+    wanted: set[Quota] = set()
+    for code in quotas:
+        try:
+            wanted.add(Quota(code.strip().upper()))
+        except ValueError:
+            raise InvalidRequestError(
+                f"Unsupported quota: {code}.",
+                code="UNSUPPORTED_QUOTA",
+                details={"quotas": [q.value for q in QUOTA_ORDER]},
+            ) from None
+    return tuple(q for q in QUOTA_ORDER if q in wanted)
 
 
 def validate_trip(

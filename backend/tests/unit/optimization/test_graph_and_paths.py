@@ -72,7 +72,7 @@ def test_backward_edge_is_rejected() -> None:
         obs("TIR", "ERS", S.AVAILABLE, train="99999"),
         obs("TIR", "ERS", S.AVAILABLE, cls="SL"),
         obs("TIR", "ERS", S.AVAILABLE, start=date(2026, 11, 21)),
-        obs("TIR", "ERS", S.AVAILABLE, quota="TQ"),  # type: ignore[arg-type]
+        obs("TIR", "ERS", S.AVAILABLE, quota=Quota.TATKAL),
     ],
     ids=["other-train", "other-class", "other-date", "other-quota"],
 )
@@ -81,8 +81,30 @@ def test_cross_train_class_date_quota_edges_are_rejected(foreign) -> None:
         build_graph(key(), [obs("ERS", "TVC", S.AVAILABLE), foreign], INDEX, ALL)
 
 
-def test_gn_quota_is_the_graph_quota() -> None:
+def test_gn_quota_is_the_default_graph_quota() -> None:
     assert key().quota is Quota.GENERAL
+
+
+def test_tatkal_graph_accepts_only_tatkal_edges() -> None:
+    tatkal = key(quota=Quota.TATKAL)
+    graph = build_graph(
+        tatkal,
+        [
+            obs("TIR", "ERS", S.AVAILABLE, quota=Quota.TATKAL),
+            obs("ERS", "TVC", S.AVAILABLE, quota=Quota.TATKAL),
+        ],
+        INDEX,
+        ALL,
+    )
+    [path] = find_paths(graph, INDEX["TIR"], INDEX["TVC"])
+    assert {edge.observation.key.quota for edge in path.edges} == {Quota.TATKAL}
+    with pytest.raises(GraphConsistencyError):
+        build_graph(
+            tatkal,
+            [obs("TIR", "ERS", S.AVAILABLE, quota=Quota.TATKAL), obs("ERS", "TVC", S.AVAILABLE)],
+            INDEX,
+            ALL,
+        )
 
 
 def test_waitlist_excluded_when_filter_false() -> None:

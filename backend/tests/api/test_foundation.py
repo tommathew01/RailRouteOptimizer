@@ -44,15 +44,15 @@ async def test_oversized_body_is_rejected(client: httpx.AsyncClient) -> None:
     assert response.json()["error"]["code"] == "REQUEST_TOO_LARGE"
 
 
-async def test_meta_labels_demo_mode_and_fixed_quota(client: httpx.AsyncClient) -> None:
+async def test_meta_labels_demo_mode_and_default_quota(client: httpx.AsyncClient) -> None:
     body = (await client.get("/api/v1/meta")).json()
     assert body["data_mode"] == "DEMO"
     assert body["provider"] == "MOCK"
-    assert body["quota"] == {"code": "GN", "label": "General", "editable": False}
+    assert body["quota"] == {"code": "GN", "label": "General", "editable": True}
     assert body["limits"]["max_segments"] == 4
     assert any("Demo mode" in note for note in body["disclaimers"])
     assert any("separate reservation" in note for note in body["disclaimers"])
-    assert {"code": "3A", "label": "AC 3 Tier"} in body["supported_classes"]
+    assert {"code": "3A", "label": "AC 3 Tier", "category": "AC"} in body["supported_classes"]
 
 
 async def test_openapi_is_published(client: httpx.AsyncClient) -> None:

@@ -5,7 +5,11 @@ import { expectAccessible, expectNoHorizontalScroll, journeyDate, pickStation } 
 test("demo mode is labelled and the search form is accessible", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("Demo mode").first()).toBeVisible();
-  await expect(page.getByLabel("Quota")).toHaveValue("General (GN) — fixed");
+  const quotas = page.getByRole("group", { name: "Quota" });
+  await expect(quotas.getByRole("checkbox", { name: /General \(GN\)/ })).toBeChecked();
+  await expect(quotas.getByRole("checkbox", { name: /^Tatkal \(TQ\)/ })).not.toBeChecked();
+  await expect(quotas.getByRole("checkbox")).toHaveCount(2); // no Premium Tatkal option
+  await expect(quotas.getByText(/Premium/)).toHaveCount(0);
   await expectAccessible(page);
   await expectNoHorizontalScroll(page);
 });
@@ -45,7 +49,7 @@ test("full journey: stations → trains → same-train segment combinations", as
   const first = options.first();
   // The showcase: the direct ticket is waitlisted, but TIR→ERS + ERS→TVC is available.
   await expect(first.getByText("All segments confirmed or available")).toBeVisible();
-  await expect(first.getByText(/General quota · 2 separate tickets/)).toBeVisible();
+  await expect(first.getByText(/General \(GN\) quota · 2 separate tickets/)).toBeVisible();
   await first.getByRole("button", { name: "How to book this option" }).click();
   await expect(first.getByText(/Ticket 1 of 2: train 90601, TIR → ERS/)).toBeVisible();
 
@@ -70,6 +74,39 @@ test("waitlisted segments show the provider estimate separately from status", as
   await expect(waitlisted.getByText(/Demo estimate:/).first()).toBeVisible();
   await waitlisted.getByRole("button", { name: /About the Demo estimate/ }).first().click();
   await expect(waitlisted.getByRole("note")).toContainText("not a guarantee");
+});
+
+test("Tatkal before its booking window: not checked, with the opening time", async ({ page }) => {
+  // 90601/90603 board TIR on their origin day, so Tatkal for a date 12 days ahead opens in 11 days.
+  await page.goto(`/search?from=TIR&to=TVC&date=${journeyDate(12)}&classes=3A&quotas=GN,TQ`);
+  await expect(page.getByText(/General \+ Tatkal quotas/)).toBeVisible();
+  await page.getByRole("button", { name: /Find segment combinations/ }).click();
+  await expect(page.getByRole("heading", { name: /Recommended combinations/ })).toBeVisible({
+    timeout: 60_000,
+  });
+  const quotas = page.getByRole("region", { name: "Quotas" });
+  await expect(quotas.getByRole("listitem").filter({ hasText: "Tatkal (TQ)" })).toContainText(
+    /not checked — booking opens \d{1,2} \w{3} \d{4}, 10:00 IST/,
+  );
+  await expect(quotas).not.toContainText(/unavailable|not available/i);
+  await expect(page.getByText("Partial search — some quotas not checked yet")).toBeVisible();
+  await expect(page.locator("article", { hasText: "Tatkal (TQ) quota" })).toHaveCount(0);
+  await expectAccessible(page);
+});
+
+test("Tatkal once open is checked as its own search space", async ({ page }) => {
+  // Travelling today: the train starts today, its Tatkal window opened yesterday.
+  await page.goto(`/search?from=TIR&to=TVC&date=${journeyDate(0)}&classes=3A&quotas=TQ`);
+  await page.getByRole("button", { name: /Find segment combinations/ }).click();
+  await expect(page.getByRole("heading", { name: /Recommended combinations/ })).toBeVisible({
+    timeout: 60_000,
+  });
+  const quotas = page.getByRole("region", { name: "Quotas" });
+  await expect(quotas.getByRole("listitem").filter({ hasText: "Tatkal (TQ)" })).toContainText("checked");
+  const options = page.locator("article[aria-labelledby^='rec-']");
+  await expect(options.first()).toContainText("Tatkal (TQ) quota");
+  await expect(page.locator("article", { hasText: "General (GN) quota" })).toHaveCount(0);
+  await expectNoHorizontalScroll(page);
 });
 
 test("keyboard-only station selection", async ({ page }) => {

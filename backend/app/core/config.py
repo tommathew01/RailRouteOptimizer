@@ -9,6 +9,7 @@ been confirmed (see docs/09_RAILKIT_CONTRACT_VERIFICATION.md, Q14).
 
 from __future__ import annotations
 
+from datetime import time
 from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
@@ -18,7 +19,8 @@ from urllib.parse import quote, urlsplit, urlunsplit
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
-from app.domain.enums import KNOWN_CLASS_CODES, AvailabilityDatePolicy
+from app.domain.enums import KNOWN_CLASS_CODES, QUOTA_ORDER, AvailabilityDatePolicy, Quota
+from app.domain.quota_eligibility import OpeningRule
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 REPO_ROOT = BACKEND_DIR.parent
@@ -83,6 +85,17 @@ class Settings(BaseSettings):
     railkit_retry_backoff_seconds: float = Field(default=0.5, ge=0, le=10)
     railkit_max_concurrency: int = Field(default=4, ge=1, le=32)
     railkit_fare_currency: str = Field(default="INR", min_length=3, max_length=3)
+    #: Quotas RailKit's seat-availability endpoint accepts. TQ verified live 2026-11-15 (docs/09
+    #: Q16). Remove TQ here to disable Tatkal without a code change.
+    railkit_supported_quotas: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: [Quota.GENERAL.value, Quota.TATKAL.value]
+    )
+
+    # --- Reservation quota booking windows (docs/08 D-21) ------------------------------------
+    #: Tatkal opens N calendar days before the train's ORIGIN date, at an IST wall-clock time.
+    tatkal_opening_days_before: int = Field(default=1, ge=0, le=7)
+    tatkal_ac_opening_time: time = time(10, 0)
+    tatkal_non_ac_opening_time: time = time(11, 0)
 
     # --- Provider quota guard (set to your RailKit plan; defaults = Free tier) ----------------
     provider_window_request_limit: int = Field(default=100, ge=1)
@@ -138,10 +151,34 @@ class Settings(BaseSettings):
     # --- Mock provider -----------------------------------------------------------------------
     mock_latency_ms: int = Field(default=120, ge=0, le=10_000)
 
-    @field_validator("cors_allowed_origins", "supported_classes", mode="before")
+    @field_validator(
+        "cors_allowed_origins", "supported_classes", "railkit_supported_quotas", mode="before"
+    )
     @classmethod
     def _parse_csv(cls, value: object) -> object:
         return _split_csv(value)
+
+    @field_validator("railkit_supported_quotas")
+    @classmethod
+    def _validate_quotas(cls, value: list[str]) -> list[str]:
+        normalized = {code.strip().upper() for code in value}
+        known = {q.value for q in Quota}
+        unknown = sorted(normalized - known)
+        if unknown:
+            raise ValueError(f"unknown quota codes: {', '.join(unknown)}")
+        if Quota.GENERAL.value not in normalized:
+            raise ValueError("the General quota (GN) must be supported")
+        return [q.value for q in QUOTA_ORDER if q.value in normalized]
+
+    @field_validator(
+        "tatkal_ac_opening_time",
+        "tatkal_non_ac_opening_time",
+    )
+    @classmethod
+    def _naive_ist_time(cls, value: time) -> time:
+        if value.tzinfo is not None:
+            raise ValueError("opening times are IST wall-clock times; omit the UTC offset")
+        return value
 
     @field_validator("supported_classes")
     @classmethod
@@ -215,6 +252,16 @@ class Settings(BaseSettings):
         boarding date and rejected the train's start date with HTTP 400.
         """
         return self.availability_date_policy is AvailabilityDatePolicy.SEGMENT_BOARDING_DATE
+
+    def opening_rule(self, quota: Quota) -> OpeningRule | None:
+        """Booking-window rule of ``quota``; ``None`` when no window applies (General)."""
+        if quota is Quota.TATKAL:
+            return OpeningRule(
+                self.tatkal_opening_days_before,
+                self.tatkal_ac_opening_time,
+                self.tatkal_non_ac_opening_time,
+            )
+        return None
 
     @property
     def secret_values(self) -> list[str]:

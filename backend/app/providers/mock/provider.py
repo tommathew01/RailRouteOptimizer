@@ -1,8 +1,9 @@
 """Deterministic mock implementation of :class:`RailwayProvider` (doc 07 §10).
 
 Provider name ``MOCK`` and ``is_live = False`` so every response is labelled as demo data.
-Availability is a pure function of (train, segment, date, class); tests can inject failures,
-force statuses and count calls.
+Availability is a pure function of (train, segment, date, class, quota); tests can inject failures,
+force statuses, restrict the supported quotas and count calls. General-quota answers do not depend
+on the quota machinery (they are identical to the GN-only mock).
 """
 
 from __future__ import annotations
@@ -10,7 +11,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 from collections import Counter
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from datetime import UTC, date, datetime
 from decimal import Decimal
 
@@ -42,7 +43,14 @@ from app.providers.mock.dataset import (
 )
 
 PROVIDER_NAME = "MOCK"
-SegmentKey = tuple[str, str, str, str]  # (train, from, to, class)
+SegmentKey = tuple[str, str, str, str]  # (train, from, to, class) — General quota
+QuotaSegmentKey = tuple[str, str, str, str, str]  # (train, from, to, class, quota)
+MockStatus = tuple[str, str | None, int | None]  # (rawStatus, prediction text, percentage)
+
+#: Tatkal demand is modelled as lower pressure at opening.
+_QUOTA_PRESSURE = {Quota.TATKAL: -0.12}
+#: Mock premium over the General fare (simulated, not a railway tariff).
+_QUOTA_FARE_FACTOR = {Quota.GENERAL: 1.0, Quota.TATKAL: 1.3}
 
 
 def _unit(*parts: str) -> float:
@@ -78,14 +86,17 @@ class MockRailwayProvider:
         *,
         latency_ms: int = 0,
         trains: Mapping[str, MockTrain] | None = None,
-        overrides: Mapping[SegmentKey, tuple[str, str | None, int | None]] | None = None,
-        failures: Mapping[SegmentKey, ProviderError] | None = None,
+        overrides: Mapping[SegmentKey | QuotaSegmentKey, MockStatus] | None = None,
+        failures: Mapping[SegmentKey | QuotaSegmentKey, ProviderError] | None = None,
         clock_now: datetime | None = None,
+        quotas: Iterable[Quota] | None = None,
     ) -> None:
         self._latency = latency_ms / 1000
         self._trains = dict(trains or demo_trains())
-        self._overrides = dict(DEMO_OVERRIDES if overrides is None else overrides)
-        self.failures: dict[SegmentKey, ProviderError] = dict(failures or {})
+        source = DEMO_OVERRIDES if overrides is None else overrides
+        self._overrides: dict[SegmentKey | QuotaSegmentKey, MockStatus] = dict(source.items())
+        self.failures: dict[SegmentKey | QuotaSegmentKey, ProviderError] = dict(failures or {})
+        self._quotas = frozenset(Quota if quotas is None else quotas)
         self._now = clock_now
         self.calls: Counter[str] = Counter()
         self.availability_queries: list[AvailabilityQuery] = []
@@ -97,6 +108,10 @@ class MockRailwayProvider:
     @property
     def is_live(self) -> bool:
         return False
+
+    @property
+    def supported_quotas(self) -> frozenset[Quota]:
+        return self._quotas
 
     async def _simulate(self, endpoint: str) -> None:
         self.calls[endpoint] += 1
@@ -209,7 +224,10 @@ class MockRailwayProvider:
             query.to_station,
             query.travel_class,
         )
-        if (failure := self.failures.get(key)) is not None:
+        failure = self.failures.get((*key, query.quota.value))
+        if failure is None and query.quota is Quota.GENERAL:
+            failure = self.failures.get(key)
+        if failure is not None:
             raise failure
         train = self._train(query.train_number, "seat_availability")
         i, j = train.index_of(query.from_station), train.index_of(query.to_station)
@@ -220,9 +238,16 @@ class MockRailwayProvider:
                 endpoint="seat_availability",
                 status_code=400,
             )
-        if query.travel_class not in train.classes or query.quota is not Quota.GENERAL:
+        if query.quota not in self._quotas:
+            raise ProviderRejectedError(  # RailKit rejects an unsupported quota this way
+                "Quota not allowed",
+                provider=PROVIDER_NAME,
+                endpoint="seat_availability",
+                status_code=400,
+            )
+        if query.travel_class not in train.classes:
             raise ProviderRejectedError(
-                "class or quota not offered",
+                "class not offered",
                 provider=PROVIDER_NAME,
                 endpoint="seat_availability",
                 status_code=400,
@@ -236,7 +261,8 @@ class MockRailwayProvider:
         parsed = reconciled.parsed
         distance = train.stops[j].distance_km - train.stops[i].distance_km
         rate, reservation = FARE_RATE.get(query.travel_class, (1.0, 40))
-        fare = Decimal(max(round(distance * rate) + reservation, reservation + 10))
+        base = max(round(distance * rate) + reservation, reservation + 10)
+        fare = Decimal(round(base * _QUOTA_FARE_FACTOR[query.quota]))
         return AvailabilityRecord(
             status=parsed.status,
             provider=PROVIDER_NAME,
@@ -259,19 +285,24 @@ class MockRailwayProvider:
                 "prediction": prediction_text,
                 "predictionPercentage": percentage,
                 "date": query.journey_date.isoformat(),
+                "quota": query.quota.value,
             },
         )
 
-    def _status_for(
-        self, train: MockTrain, i: int, j: int, query: AvailabilityQuery
-    ) -> tuple[str, str | None, int | None]:
+    def _status_for(self, train: MockTrain, i: int, j: int, query: AvailabilityQuery) -> MockStatus:
         key = (query.train_number, query.from_station, query.to_station, query.travel_class)
-        if key in self._overrides:
+        quota = query.quota
+        if (forced := self._overrides.get((*key, quota.value))) is not None:
+            return forced
+        if quota is Quota.GENERAL and key in self._overrides:
             return self._overrides[key]
+        # General keeps its original hash inputs, so GN answers are unchanged by quota support.
+        parts = key if quota is Quota.GENERAL else (*key, quota.value)
         span = (j - i) / max(1, len(train.stops) - 1)
-        roll = _unit(*key, query.journey_date.isoformat())
+        roll = _unit(*parts, query.journey_date.isoformat())
         pressure = 0.55 * roll + 0.75 * span + CLASS_BIAS.get(query.travel_class, 0.0)
-        detail = _unit("detail", *key, query.journey_date.isoformat())
+        pressure += _QUOTA_PRESSURE.get(quota, 0.0)
+        detail = _unit("detail", *parts, query.journey_date.isoformat())
         if pressure < 0.40:
             return (f"AVAILABLE-{max(1, round(detail * 90)):04d}", None, None)
         if pressure < 0.55:
@@ -281,9 +312,10 @@ class MockRailwayProvider:
             booked = 3 + round(detail * 140)
             current = max(1, round(booked * (0.4 + 0.4 * roll)))
             chance = max(3, min(95, round(92 - current * 1.1)))
+            prefix = "TQWL" if quota is Quota.TATKAL else "GNWL"
             if detail > 0.85:  # some waitlists come without any provider prediction
-                return (f"GNWL{booked}/WL{current}", None, None)
-            return (f"GNWL{booked}/WL{current}", f"{chance}% Chance", chance)
+                return (f"{prefix}{booked}/WL{current}", None, None)
+            return (f"{prefix}{booked}/WL{current}", f"{chance}% Chance", chance)
         return ("REGRET/WL", None, None)
 
     async def aclose(self) -> None:

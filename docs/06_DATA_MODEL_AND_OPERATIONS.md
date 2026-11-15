@@ -42,7 +42,8 @@
 - `destination_station_code`
 - `journey_date` date
 - `classes` JSONB
-- `quota` default `GN`
+- `quota` default `GN` (legacy: first selected quota)
+- `quotas` JSONB, default `["GN"]` — selected quotas in GN/TQ order (migration `3b7d2c9a41e6`)
 - `filters` JSONB
 - `status`
 - `search_completeness`

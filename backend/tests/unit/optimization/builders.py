@@ -18,8 +18,10 @@ INDEX = {code: i for i, code in enumerate(ROUTE)}
 S = AvailabilityStatus
 
 
-def key(train: str = "12345", cls: str = "3A", start: date = START) -> GraphKey:
-    return GraphKey(train, start, cls)
+def key(
+    train: str = "12345", cls: str = "3A", start: date = START, quota: Quota = Quota.GENERAL
+) -> GraphKey:
+    return GraphKey(train, start, cls, quota)
 
 
 def obs(
@@ -46,7 +48,8 @@ def obs(
     )
     return SegmentObservation(
         id=uuid.uuid5(
-            uuid.NAMESPACE_URL, f"{train}/{cls}/{start}/{src}/{dst}/{status}/{pct}/{fare}"
+            uuid.NAMESPACE_URL,
+            f"{train}/{cls}/{quota}/{start}/{src}/{dst}/{status}/{pct}/{fare}",
         ),
         key=SegmentKey(train, start, src, dst, cls, quota),
         provider_date=start,

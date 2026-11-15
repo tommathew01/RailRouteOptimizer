@@ -92,8 +92,23 @@ and each has a defensive default.
 | D-19 | Live contract run 2026-11-14 verified D-02's default (`SEGMENT_BOARDING_DATE`); the after-midnight warning now appears only for the contradicting `TRAIN_START_DATE` policy. Trains RailKit matched to nearby stations get a one-click search for their own station pair. | Evidence in docs/09 §5. |
 | D-18 | The frontend's `npm start` runs the standalone server the same way the Docker image does (`scripts/start-standalone.mjs`); e2e tests use it. | `next start` is unsupported with `output: "standalone"`; tests should exercise what ships. |
 
+## 6a. Tatkal (2026-11-15)
+
+Replaces binding decision "General quota only" (docs/README, ADR-007) at the product owner's request.
+
+| # | Decision | Rationale |
+|---|---|---|
+| D-20 | Quotas `GN` (default) and `TQ`; the optimize request takes `quotas` (1–2). Every **train × class × quota** is a separate planner combination, graph and path set, created quota-major (GN first). The legacy single `quota` field stays ignored. | Never mix quotas; a General-only search is planned, budgeted and ranked exactly as before (verified: identical provider calls and results with a closed TQ added). |
+| D-21 | Eligibility is a pure domain function (`app/domain/quota_eligibility.py`) behind `QuotaEligibilityService` (injectable clock). Window = train **origin date** − `days_before` (1) at 10:00 IST (AC) / 11:00 IST (non-AC), configurable. States: `NOT_APPLICABLE`, `NOT_YET_OPEN`, `OPENS_TODAY`, `OPEN`, `OPENING_PASSED`, `JOURNEY_DATE_PASSED`, `CLASS_CATEGORY_UNKNOWN`, `UNDETERMINED`, `PROVIDER_UNSUPPORTED`; only the first, `OPEN` and `OPENING_PASSED` are queried. One `now` per search. | The boarding date is later than the origin date for stops reached after midnight; using it would open the window a day late. `OPENING_PASSED` is queried because Tatkal stays bookable until charting — the provider's answer decides. |
+| D-22 | One class-category map (AC: 1A 2A 3A 3E CC EC EA VA; non-AC: SL 2S FC VS). `VC`, `CH`, `HS` are unclassified and never queried for TQ. No class-level Tatkal exclusions (e.g. 1A) are encoded; the provider's answer decides. | Never guess an opening time; avoid encoding unverified railway rules. |
+| D-23 | Not-queried combinations spend no budget, are reported per class (`NOT_YET_OPEN` / `QUOTA_NOT_SUPPORTED` / `NOT_QUERIED` + `eligibility`) and per quota (`quotas[]`), and make the search `PARTIAL_QUOTA_NOT_QUERIED` / `QUOTA_NOT_QUERIED` (budget, timeout and provider reasons take precedence). No automatic re-query. | "Not checked" must never read as "unavailable" or "no path exists". |
+| D-24 | Provider support is part of the provider interface (`supported_quotas`). RailKit = `RAILKIT_SUPPORTED_QUOTAS` (default `GN,TQ`; TQ verified live). If **no** selected quota is supported → `422 QUOTA_NOT_SUPPORTED` before any provider call; otherwise unsupported quotas are reported and nothing is substituted. | Spec: verify the provider, report clearly, never fall back silently. |
+| D-26 | **Premium Tatkal (`PT`) removed** at the product owner's request ("not required/available"). The live probe had already shown RailKit rejecting it (`400 Quota not allowed`, docs/09 Q16). `Quota`, settings (`PREMIUM_TATKAL_*`), mock behaviour, schemas, UI and tests no longer mention it; `PT` is now an unknown code (HTTP 400, or an invalid `quotas` URL parameter). `RAILKIT_SUPPORTED_QUOTAS` is kept so Tatkal can be switched off without a code change. | The option was not usable; keeping dead configuration and a permanently "not supported" chip only confuses users. Nothing persisted a `PT` value (the quota feature had not been deployed). |
+| D-25 | `journey_searches.quotas` JSONB (migration `3b7d2c9a41e6`, default `["GN"]`); the legacy `quota` column keeps the first selected quota. All response additions have defaults, so stored snapshots from before the change still load. The availability check endpoint now honours `quota` (`null` → GN). | Additive, backward-compatible schema and API. |
+
 ## 7. Status
 
 All seven milestones are implemented and the core RailKit contract is verified live (docs/09 §5).
+Tatkal support (§6a) is implemented; Premium Tatkal was removed (D-26).
 Still open: Q10, Q12 (invalid stop pair) and Q13 in docs/09, plus the non-contract launch gates
 (runbook §9).

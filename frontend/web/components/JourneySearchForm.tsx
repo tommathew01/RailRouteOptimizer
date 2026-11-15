@@ -7,16 +7,18 @@ import { useState, type FormEvent } from "react";
 import { StationAutocomplete, type StationValue } from "@/components/StationAutocomplete";
 import { metaQuery } from "@/lib/api/queries";
 import { istDate } from "@/lib/format";
-import { journeyQueryString } from "@/lib/search-params";
+import { openingRuleHint, quotaOptions } from "@/lib/quotas";
+import { canonicalQuotas, journeyQueryString } from "@/lib/search-params";
 import { useNow } from "@/lib/use-now";
 
-type Errors = Partial<Record<"from" | "to" | "date" | "classes", string>>;
+type Errors = Partial<Record<"from" | "to" | "date" | "classes" | "quotas", string>>;
 
 export type JourneyFormInitial = {
   from?: StationValue | null;
   to?: StationValue | null;
   date?: string;
   classes?: string[];
+  quotas?: string[];
   allowRac?: boolean;
   allowWaitlist?: boolean;
 };
@@ -30,6 +32,7 @@ export function JourneySearchForm({ initial }: { initial?: JourneyFormInitial })
   const [to, setTo] = useState<StationValue | null>(initial?.to ?? null);
   const [date, setDate] = useState(initial?.date ?? "");
   const [classes, setClasses] = useState<string[]>(initial?.classes ?? ["3A"]);
+  const [quotas, setQuotas] = useState<string[]>(initial?.quotas ?? ["GN"]);
   const [allowRac, setAllowRac] = useState(initial?.allowRac ?? false);
   const [allowWaitlist, setAllowWaitlist] = useState(initial?.allowWaitlist ?? false);
   const [errors, setErrors] = useState<Errors>({});
@@ -45,6 +48,19 @@ export function JourneySearchForm({ initial }: { initial?: JourneyFormInitial })
     );
   }
 
+  function toggleQuota(code: string) {
+    setQuotas((current) =>
+      current.includes(code) ? current.filter((c) => c !== code) : [...current, code],
+    );
+  }
+
+  const quotaChoices = quotaOptions(meta);
+  const unsupported = new Set(
+    quotaChoices.filter((q) => !q.provider_supported).map((q) => q.code as string),
+  );
+  const selectedQuotas = canonicalQuotas(quotas.filter((q) => !unsupported.has(q)));
+  const ruleHint = openingRuleHint(meta);
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const next: Errors = {};
@@ -55,6 +71,7 @@ export function JourneySearchForm({ initial }: { initial?: JourneyFormInitial })
     else if ((minDate && date < minDate) || (maxDate && date > maxDate))
       next.date = "Date is outside the reservation window.";
     if (classes.length === 0) next.classes = "Select at least one class.";
+    if (selectedQuotas.length === 0) next.quotas = "Select at least one quota.";
     setErrors(next);
     if (Object.keys(next).length || !from || !to) return;
     const query = journeyQueryString({
@@ -62,6 +79,7 @@ export function JourneySearchForm({ initial }: { initial?: JourneyFormInitial })
       to: to.code,
       date,
       classes,
+      quotas: selectedQuotas,
       rac: allowRac,
       wl: allowWaitlist,
     });
@@ -124,22 +142,43 @@ export function JourneySearchForm({ initial }: { initial?: JourneyFormInitial })
             </p>
           ) : null}
         </div>
-        <div>
-          <label htmlFor="journey-quota" className="field-label">
-            Quota
-          </label>
-          <input
-            id="journey-quota"
-            type="text"
-            readOnly
-            value="General (GN) — fixed"
-            aria-describedby="journey-quota-hint"
-            className="field-input bg-surface-muted text-muted"
-          />
-          <p id="journey-quota-hint" className="mt-1 text-xs text-muted">
-            Only General quota is supported; it is enforced by the server.
+        <fieldset aria-describedby={errors.quotas ? "quotas-error" : "quotas-hint"}>
+          <legend className="field-label">Quota</legend>
+          <div className="flex flex-wrap gap-2">
+            {quotaChoices.map((option) => {
+              const disabled = !option.provider_supported;
+              const checked = !disabled && quotas.includes(option.code);
+              return (
+                <label
+                  key={option.code}
+                  className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-sm transition-colors ${disabled ? "cursor-not-allowed border-border bg-surface-muted text-muted" : checked ? "cursor-pointer border-brand bg-brand text-brand-contrast" : "cursor-pointer border-border bg-surface hover:bg-surface-muted"}`}
+                >
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={checked}
+                    disabled={disabled}
+                    onChange={() => toggleQuota(option.code)}
+                  />
+                  <span aria-hidden="true">{disabled ? "–" : checked ? "✓" : "+"}</span>
+                  <span>
+                    {option.label} <span className="font-semibold">({option.code})</span>
+                  </span>
+                  {disabled ? <span className="text-xs">not supported</span> : null}
+                </label>
+              );
+            })}
+          </div>
+          <p id="quotas-hint" className="mt-1 text-xs text-muted">
+            Each quota is searched separately; one recommendation never mixes quotas.
+            {ruleHint ? ` ${ruleHint}` : ""}
           </p>
-        </div>
+          {errors.quotas ? (
+            <p id="quotas-error" className="field-error">
+              {errors.quotas}
+            </p>
+          ) : null}
+        </fieldset>
       </div>
 
       <fieldset aria-describedby={errors.classes ? "classes-error" : "classes-hint"}>

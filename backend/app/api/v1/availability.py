@@ -1,6 +1,8 @@
-"""POST /api/v1/availability/check (doc 05 §4). Quota is always GN; client quota is ignored."""
+"""POST /api/v1/availability/check (doc 05 §4): one segment, one class, one quota."""
 
 from __future__ import annotations
+
+from datetime import date
 
 from fastapi import APIRouter
 
@@ -9,14 +11,53 @@ from app.core.errors import SemanticValidationError, require
 from app.domain import disclaimers
 from app.domain.enums import Quota
 from app.domain.models import SegmentKey
+from app.domain.quota_eligibility import QuotaEligibility, describe_eligibility
 from app.domain.route import provider_query_date, train_start_date, validate_journey
 from app.schemas.availability import AvailabilityCheckRequest, AvailabilityCheckResponse
 from app.schemas.common import ERROR_RESPONSES
-from app.schemas.shared import AvailabilityOut, FareOut, PredictionOut
+from app.schemas.shared import AvailabilityOut, FareOut, PredictionOut, QuotaEligibilityOut
 from app.services.availability import SegmentRequest, run_record
 from app.services.journey_search import validate_trip
 
 router = APIRouter(tags=["availability"])
+
+
+def _not_queried(
+    body: AvailabilityCheckRequest,
+    container: ContainerDep,
+    eligibility: QuotaEligibility,
+    *,
+    query_date: date,
+    start: date | None,
+) -> AvailabilityCheckResponse:
+    """The provider was deliberately not asked: no availability, never 'unavailable'."""
+    warnings = [describe_eligibility(eligibility)]
+    if not container.provider.is_live:
+        warnings.insert(0, disclaimers.DEMO_MODE)
+    quota = eligibility.quota
+    return AvailabilityCheckResponse(
+        train_number=body.train_number,
+        source=body.source,
+        destination=body.destination,
+        journey_date=body.journey_date,
+        provider_query_date=query_date,
+        train_start_date=start,
+        travel_class=body.travel_class,
+        quota=quota.value,
+        quota_label=quota.label,
+        queried=False,
+        eligibility=QuotaEligibilityOut.of(eligibility),
+        availability=None,
+        prediction=None,
+        fare=None,
+        provider=container.provider.name,
+        provider_checked_at=None,
+        checked_at=None,
+        cached=False,
+        anomalies=[],
+        data_mode=container.data_mode,  # type: ignore[arg-type]
+        warnings=warnings,
+    )
 
 
 @router.post(
@@ -24,12 +65,13 @@ router = APIRouter(tags=["availability"])
     response_model=AvailabilityCheckResponse,
     responses=ERROR_RESPONSES,
     dependencies=[search_rate_limit],
-    summary="Check one segment on one train (single-ticket, General quota)",
+    summary="Check one segment on one train (single ticket, one quota)",
 )
 async def check_availability(
     body: AvailabilityCheckRequest, container: ContainerDep
 ) -> AvailabilityCheckResponse:
     settings = container.settings
+    quota = Quota(body.quota or Quota.GENERAL.value)
     validate_trip(
         settings,
         container.clock,
@@ -38,6 +80,12 @@ async def check_availability(
         body.journey_date,
         [body.travel_class],
     )
+    if not container.eligibility.is_supported(quota):  # decided before any provider call
+        unsupported = container.eligibility.evaluate(
+            quota, body.travel_class, train_origin_date=None, boarding_date=body.journey_date
+        )
+        return _not_queried(body, container, unsupported, query_date=body.journey_date, start=None)
+
     route, analysis = await container.trains.get_route(body.train_number)
     journey = validate_journey(analysis, body.source, body.destination)
     if not journey.verified:
@@ -55,8 +103,17 @@ async def check_availability(
     query_date = provider_query_date(
         start, analysis, source_index, settings.availability_date_policy
     )
+    # The booking window depends on the train's origin date, never on the boarding date.
+    eligibility = container.eligibility.evaluate(
+        quota, body.travel_class, train_origin_date=start, boarding_date=body.journey_date
+    )
+    if not eligibility.queryable:
+        return _not_queried(body, container, eligibility, query_date=query_date, start=start)
+
     request = SegmentRequest(
-        SegmentKey(body.train_number, start, body.source, body.destination, body.travel_class),
+        SegmentKey(
+            body.train_number, start, body.source, body.destination, body.travel_class, quota
+        ),
         query_date,
     )
     result = await container.availability.check(request)
@@ -70,8 +127,6 @@ async def check_availability(
     warnings = [disclaimers.SINGLE_PASSENGER, disclaimers.BOOKABLE_NOT_CONFIRMED]
     if record.prediction is not None:
         warnings.append(disclaimers.PREDICTION)
-    if body.quota and body.quota.strip().upper() != Quota.GENERAL.value:
-        warnings.insert(0, "Only General (GN) quota is supported; the requested quota was ignored.")
     if not container.provider.is_live:
         warnings.insert(0, disclaimers.DEMO_MODE)
     return AvailabilityCheckResponse(
@@ -82,6 +137,10 @@ async def check_availability(
         provider_query_date=query_date,
         train_start_date=start,
         travel_class=body.travel_class,
+        quota=quota.value,
+        quota_label=quota.label,
+        queried=True,
+        eligibility=QuotaEligibilityOut.of(eligibility),
         availability=AvailabilityOut.of(record),
         prediction=PredictionOut.of(record.prediction),
         fare=FareOut.of(record.fare),

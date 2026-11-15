@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from datetime import date
 
 from app.core.clock import Clock
+from app.domain.enums import Quota
 from app.domain.models import (
     AvailabilityQuery,
     AvailabilityRecord,
@@ -33,8 +34,11 @@ class RailKitProvider:
         clock: Clock,
         fare_currency: str,
         secret_fragments: Sequence[str] = (),
+        supported_quotas: Iterable[Quota] = (Quota.GENERAL, Quota.TATKAL),
     ) -> None:
         self._client = client
+        # Live 2026-11-15 (docs/09 Q16): TQ accepted by seat availability.
+        self._quotas = frozenset(supported_quotas)
         self._clock = clock
         self._fare_currency = fare_currency
         self._secret_fragments = tuple(secret_fragments)
@@ -46,6 +50,10 @@ class RailKitProvider:
     @property
     def is_live(self) -> bool:
         return True
+
+    @property
+    def supported_quotas(self) -> frozenset[Quota]:
+        return self._quotas
 
     @property
     def http(self) -> RailKitHttpClient:
@@ -82,6 +90,12 @@ class RailKitProvider:
         return map_train_route(data, train_number=train_number, fetched_at=self._clock.now())
 
     async def get_availability(self, query: AvailabilityQuery) -> AvailabilityRecord:
+        if query.quota not in self._quotas:  # never spend a request on a known rejection
+            raise ProviderRejectedError(
+                f"quota {query.quota.value} is not supported by this provider",
+                provider=PROVIDER_NAME,
+                endpoint="seat_availability",
+            )
         parts = (
             query.train_number,
             query.from_station,

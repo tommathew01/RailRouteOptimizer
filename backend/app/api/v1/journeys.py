@@ -40,6 +40,7 @@ async def optimize(body: OptimizeRequest, container: ContainerDep) -> JSONRespon
         max_segments=body.max_segments,
         train_numbers=body.train_numbers,
         client_quota=body.quota,
+        quotas=list(body.quotas),
     )
     record = await container.journeys.submit(request)
     if record.status in (SearchStatus.COMPLETED, SearchStatus.FAILED):

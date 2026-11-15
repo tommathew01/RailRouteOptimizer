@@ -20,7 +20,8 @@ ContainerFactory = Callable[[Settings], Awaitable[AppContainer]]
 API_DESCRIPTION = """
 Same-train segment availability discovery for Indian Railways.
 
-* Every recommendation uses **one train, one journey, one class and General (GN) quota**.
+* Every recommendation uses **one train, one journey, one class and one quota** (GN or TQ;
+  quotas are never mixed). Tatkal is only queried once its booking window opens.
 * A recommendation of *n* segments means **n separate tickets** (possibly *n* PNRs).
 * Current availability and RailKit's optional prediction are always reported separately.
 * Searches may be **partial**; `search_completeness` and `coverage` state what was checked.

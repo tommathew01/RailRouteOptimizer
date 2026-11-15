@@ -115,7 +115,11 @@ class JourneySearchRow(Base):
     destination_station_code: Mapped[str] = mapped_column(String(8))
     journey_date: Mapped[date] = mapped_column(Date)
     classes: Mapped[list[str]] = mapped_column(JSONB)
+    #: Legacy: the first selected quota. ``quotas`` holds the full selection (docs/08 D-20).
     quota: Mapped[str] = mapped_column(String(4), default="GN", server_default="GN")
+    quotas: Mapped[list[str]] = mapped_column(
+        JSONB, default=lambda: ["GN"], server_default=text("'[\"GN\"]'::jsonb")
+    )
     filters: Mapped[JSON] = mapped_column(JSONB)
     train_numbers: Mapped[list[str] | None] = mapped_column(JSONB)
     max_segments: Mapped[int] = mapped_column(SmallInteger)

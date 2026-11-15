@@ -49,14 +49,15 @@ async def test_check_reports_status_and_prediction_separately(client: httpx.Asyn
     assert again["cached"] is True
 
 
-async def test_client_quota_is_ignored_and_gn_enforced() -> None:
+async def test_quota_defaults_to_general_and_null_is_accepted() -> None:
     provider = MockRailwayProvider()
     async with api_client(provider=provider) as (client, _):
-        response = await client.post("/api/v1/availability/check", json=body(quota="TQ"))
+        response = await client.post("/api/v1/availability/check", json=body(quota=None))
+    data = response.json()
     assert response.status_code == 200
-    assert response.json()["quota"] == "GN"
-    assert provider.availability_queries[0].quota.value == "GN"
-    assert any("quota was ignored" in w for w in response.json()["warnings"])
+    assert (data["quota"], data["quota_label"], data["queried"]) == ("GN", "General", True)
+    assert data["eligibility"]["state"] == "NOT_APPLICABLE"
+    assert [q.quota.value for q in provider.availability_queries] == ["GN"]
 
 
 @pytest.mark.parametrize(

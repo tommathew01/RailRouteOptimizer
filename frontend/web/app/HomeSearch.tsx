@@ -17,6 +17,7 @@ export function HomeSearch() {
         to: { code: query.to, name: params.get("toName") ?? query.to },
         date: query.date,
         classes: query.classes,
+        quotas: query.quotas,
         allowRac: query.rac,
         allowWaitlist: query.wl,
       }}

@@ -2,7 +2,8 @@
 
 ## 1. Objective
 
-For one train, journey date, selected class and General quota, find the best contiguous sequence of between one and four checked segments connecting source to destination.
+For one train, journey date, selected class and selected quota (General or Tatkal),
+find the best contiguous sequence of between one and four checked segments connecting source to destination.
 
 The optimizer receives normalized data only. It must not call RailKit or perform network I/O.
 
@@ -29,7 +30,7 @@ A valid path:
 - uses same train number;
 - uses same journey date;
 - uses same class;
-- uses quota GN;
+- uses one quota (the combination's: GN or TQ) — never mixed;
 - contains 1–4 segments;
 - contains no duplicate or backward station traversal.
 
@@ -176,6 +177,25 @@ Use Redis single-flight/distributed lock to prevent simultaneous identical misse
 
 Train route cache can have a longer TTL because schedule data changes less frequently, but must be invalidated/expired according to provider policy.
 
+## 8a. Reservation quotas (docs/08 D-20…D-25)
+
+- Every **train × class × quota** is its own planner combination, graph (`GraphKey` includes the
+  quota) and set of paths. Combinations are created quota-major (GN first), so a General-only search
+  is planned exactly as before.
+- A TQ combination is created only when `QuotaEligibilityService` says the booking window is open
+  (`OPEN`, `OPENING_PASSED`); `GN` is always `NOT_APPLICABLE`. Skipped combinations spend no budget,
+  are counted in `coverage.combinations_not_queried` and make the search
+  `PARTIAL_QUOTA_NOT_QUERIED` (never "no path exists").
+- The window is anchored to the train's **origin date** (`train_start_date`), not the boarding date.
+- The per-search budget, deadline and provider quota guard are shared by all quotas; budget refusals
+  are reported per combination exactly as before.
+- Cache keys and single-flight keys already contain the quota
+  (`availability:{provider}:{train}:{start}:{provider_date}:{from}:{to}:{class}:{quota}`), so a GN answer
+  is never reused for TQ. The planner never asks for the same edge twice within a combination.
+- Ranking is unchanged (§5). The quota only enters the final stable tie-breaker (GN, TQ order).
+  Consequence: a direct Tatkal ticket outranks a 2-ticket General combination with
+  the same status tier, because fewer tickets beats lower fare.
+
 ## 9. Worked example
 
 Route:
@@ -209,7 +229,7 @@ If WL is disabled, the second path is excluded. If RAC is allowed, first path re
 - Different train IDs cannot combine.
 - Different classes cannot combine.
 - Different dates cannot combine.
-- GN quota enforced.
+- Different quotas cannot combine (a TQ graph rejects GN edges).
 - WL excluded when filter false.
 - RAC excluded when filter false.
 - Unknown never treated as available.

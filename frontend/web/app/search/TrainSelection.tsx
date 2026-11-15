@@ -10,6 +10,7 @@ import { TrainCard } from "@/components/TrainCard";
 import { ApiError } from "@/lib/api/client";
 import { metaQuery, startOptimization, trainSearchQuery } from "@/lib/api/queries";
 import { formatCalendarDate } from "@/lib/format";
+import { quotaList } from "@/lib/quotas";
 import { parseJourneyQuery, type JourneyQuery } from "@/lib/search-params";
 import { nearbyStationPairs, pairSearchHref } from "@/lib/station-pairs";
 
@@ -68,6 +69,7 @@ function TrainList({
         classes: query.classes,
         filters: { allow_rac: query.rac, allow_waitlist: query.wl },
         train_numbers: [...chosen],
+        quotas: query.quotas,
       }),
     onSuccess: ({ searchId }) => router.push(`/results/${searchId}`),
   });
@@ -90,7 +92,8 @@ function TrainList({
             <span className="sr-only"> to </span> {toName ?? query.to}
           </h1>
           <p className="text-muted">
-            {formatCalendarDate(query.date)} · {query.classes.join(", ")} · General quota
+            {formatCalendarDate(query.date)} · {query.classes.join(", ")} · {quotaList(query.quotas)}{" "}
+            quota{query.quotas.length === 1 ? "" : "s"}
             {query.rac ? " · RAC allowed" : ""}
             {query.wl ? " · waitlist allowed" : ""}
           </p>
@@ -137,8 +140,11 @@ function TrainList({
             </Notice>
           ) : (
             <p className="text-sm text-muted" id="selection-help">
-              Select up to {maxTrains} trains. Each selected train × class is checked within a
-              fixed request budget, so fewer trains means deeper checks.
+              Select up to {maxTrains} trains. Each selected train × class × quota is checked within
+              a fixed request budget, so fewer trains means deeper checks.
+              {query.quotas.some((q) => q !== "GN")
+                ? " Tatkal quotas are only checked once their booking window has opened."
+                : ""}
             </p>
           )}
           <ul className="space-y-3" aria-describedby="selection-help">

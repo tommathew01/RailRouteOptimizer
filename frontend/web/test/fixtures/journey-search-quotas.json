@@ -1,0 +1,785 @@
+{
+  "open": {
+    "search_id": "ac9ae26e-6396-418c-92fe-398ed76cf365",
+    "status": "COMPLETED",
+    "status_url": "/api/v1/journeys/ac9ae26e-6396-418c-92fe-398ed76cf365",
+    "data_mode": "DEMO",
+    "provider": "MOCK",
+    "request": {
+      "source": "TIR",
+      "destination": "TVC",
+      "journey_date": "2026-11-09",
+      "classes": [
+        "3A"
+      ],
+      "quota": "GN",
+      "quotas": [
+        "GN",
+        "TQ"
+      ],
+      "filters": {
+        "allow_rac": true,
+        "allow_waitlist": false
+      },
+      "max_segments": 4,
+      "train_numbers": null
+    },
+    "search_completeness": "PARTIAL_BUDGET",
+    "incomplete_reason": "AVAILABILITY_REQUEST_BUDGET_REACHED",
+    "coverage": {
+      "trains_found": 2,
+      "trains_evaluated": 2,
+      "combinations_evaluated": 4,
+      "combinations_not_queried": 0,
+      "availability_requests_planned": 79,
+      "availability_requests_made": 40,
+      "request_budget": 40,
+      "cache_hits": 0,
+      "segments_checked": 40,
+      "segments_unknown": 0,
+      "segments_failed": 0
+    },
+    "trains": [
+      {
+        "train_number": "90601",
+        "train_name": "DEMO COASTAL EXPRESS",
+        "evaluation": "EVALUATED",
+        "route_issues": [],
+        "departure": "2026-11-09T22:04:00+05:30",
+        "arrival": "2026-11-10T05:58:00+05:30",
+        "intermediate_stops_total": 13,
+        "intermediate_stops_considered": 13,
+        "classes": [
+          {
+            "travel_class": "3A",
+            "quota": "GN",
+            "quota_label": "General",
+            "state": "SOLVED",
+            "queried": true,
+            "depth_reached": 2,
+            "best_status_tier": 0,
+            "recommendations": 1,
+            "eligibility": {
+              "quota": "GN",
+              "state": "NOT_APPLICABLE",
+              "queryable": true,
+              "class_category": "AC",
+              "train_origin_date": "2026-11-09",
+              "opens_at": null,
+              "message": "General (GN): no booking-window restriction applies."
+            }
+          },
+          {
+            "travel_class": "3A",
+            "quota": "TQ",
+            "quota_label": "Tatkal",
+            "state": "STOPPED",
+            "queried": true,
+            "depth_reached": 2,
+            "best_status_tier": 1,
+            "recommendations": 2,
+            "eligibility": {
+              "quota": "TQ",
+              "state": "OPEN",
+              "queryable": true,
+              "class_category": "AC",
+              "train_origin_date": "2026-11-09",
+              "opens_at": "2026-11-08T10:00:00+05:30",
+              "message": "Tatkal (TQ) booking for class 3A is open (opened on 08 Nov 2026 at 10:00 IST)."
+            }
+          }
+        ]
+      },
+      {
+        "train_number": "90603",
+        "train_name": "DEMO NIGHT MAIL",
+        "evaluation": "EVALUATED",
+        "route_issues": [],
+        "departure": "2026-11-09T23:23:00+05:30",
+        "arrival": "2026-11-10T07:18:00+05:30",
+        "intermediate_stops_total": 7,
+        "intermediate_stops_considered": 7,
+        "classes": [
+          {
+            "travel_class": "3A",
+            "quota": "GN",
+            "quota_label": "General",
+            "state": "STOPPED",
+            "queried": true,
+            "depth_reached": 3,
+            "best_status_tier": 1,
+            "recommendations": 2,
+            "eligibility": {
+              "quota": "GN",
+              "state": "NOT_APPLICABLE",
+              "queryable": true,
+              "class_category": "AC",
+              "train_origin_date": "2026-11-09",
+              "opens_at": null,
+              "message": "General (GN): no booking-window restriction applies."
+            }
+          },
+          {
+            "travel_class": "3A",
+            "quota": "TQ",
+            "quota_label": "Tatkal",
+            "state": "STOPPED",
+            "queried": true,
+            "depth_reached": 3,
+            "best_status_tier": 1,
+            "recommendations": 2,
+            "eligibility": {
+              "quota": "TQ",
+              "state": "OPEN",
+              "queryable": true,
+              "class_category": "AC",
+              "train_origin_date": "2026-11-09",
+              "opens_at": "2026-11-08T10:00:00+05:30",
+              "message": "Tatkal (TQ) booking for class 3A is open (opened on 08 Nov 2026 at 10:00 IST)."
+            }
+          }
+        ]
+      }
+    ],
+    "quotas": [
+      {
+        "quota": "GN",
+        "quota_label": "General",
+        "provider_supported": true,
+        "queried": true,
+        "combinations_eligible": 2,
+        "combinations_not_queried": 0,
+        "next_opening_at": null,
+        "not_queried": [],
+        "recommendations": 3
+      },
+      {
+        "quota": "TQ",
+        "quota_label": "Tatkal",
+        "provider_supported": true,
+        "queried": true,
+        "combinations_eligible": 2,
+        "combinations_not_queried": 0,
+        "next_opening_at": null,
+        "not_queried": [],
+        "recommendations": 4
+      }
+    ],
+    "recommendations": [
+      {
+        "rank": 1,
+        "train_number": "90601",
+        "train_name": "DEMO COASTAL EXPRESS",
+        "travel_class": "3A",
+        "travel_class_label": "AC 3 Tier",
+        "quota": "GN",
+        "quota_label": "General",
+        "train_start_date": "2026-11-09",
+        "segment_count": 2,
+        "status_tier": 0,
+        "status_tier_label": "All segments confirmed or available",
+        "segments": [
+          {
+            "sequence": 0,
+            "source": "TIR",
+            "source_name": "Tirur",
+            "destination": "ERS",
+            "destination_name": "Ernakulam Junction",
+            "departure": "2026-11-09T22:04:00+05:30",
+            "arrival": "2026-11-10T01:17:00+05:30",
+            "provider_query_date": "2026-11-09",
+            "boards_on_later_date": false,
+            "status": "AVAILABLE",
+            "availability_text": "AVL 7",
+            "raw_status": "AVAILABLE-0007",
+            "waitlist_type": null,
+            "waitlist_number": null,
+            "rac_number": null,
+            "available_count": 7,
+            "can_book": true,
+            "prediction": null,
+            "fare": {
+              "amount": "260.00",
+              "currency": "INR",
+              "basis": "MOCK_DISTANCE_FARE"
+            },
+            "checked_at": "2026-11-08T10:00:00Z",
+            "cached": false,
+            "observation_id": "69cfefcc-151e-4489-8559-a38597ccf93b"
+          },
+          {
+            "sequence": 1,
+            "source": "ERS",
+            "source_name": "Ernakulam Junction",
+            "destination": "TVC",
+            "destination_name": "Thiruvananthapuram Central",
+            "departure": "2026-11-10T01:27:00+05:30",
+            "arrival": "2026-11-10T05:58:00+05:30",
+            "provider_query_date": "2026-11-10",
+            "boards_on_later_date": true,
+            "status": "AVAILABLE",
+            "availability_text": "AVL 31",
+            "raw_status": "AVAILABLE-0031",
+            "waitlist_type": null,
+            "waitlist_number": null,
+            "rac_number": null,
+            "available_count": 31,
+            "can_book": true,
+            "prediction": null,
+            "fare": {
+              "amount": "363.00",
+              "currency": "INR",
+              "basis": "MOCK_DISTANCE_FARE"
+            },
+            "checked_at": "2026-11-08T10:00:00Z",
+            "cached": false,
+            "observation_id": "4deb3607-5aac-4317-b2b2-0e4172f7a296"
+          }
+        ],
+        "total_fare": {
+          "amount": "623.00",
+          "currency": "INR",
+          "basis": null
+        },
+        "fare_complete": true,
+        "prediction_summary": {
+          "kind": "MINIMUM_SEGMENT_ESTIMATE",
+          "minimum_percentage": null,
+          "segments_with_estimate": 0,
+          "segments_needing_estimate": 0,
+          "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+        },
+        "explanation": [
+          "Every segment is currently confirmed or available.",
+          "2 separate tickets.",
+          "Total fare INR 623.00 (every segment priced)."
+        ],
+        "booking_steps": [
+          "Ticket 1 of 2: train 90601, TIR \u2192 ERS, departing 09 Nov 2026 22:04 IST, class 3A, General (GN) quota.",
+          "Ticket 2 of 2: train 90601, ERS \u2192 TVC, departing 10 Nov 2026 01:27 IST, class 3A, General (GN) quota.",
+          "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at ERS.",
+          "Check every ticket on an authorized booking platform before paying."
+        ],
+        "oldest_checked_at": "2026-11-08T10:00:00Z"
+      },
+      {
+        "rank": 2,
+        "train_number": "90603",
+        "train_name": "DEMO NIGHT MAIL",
+        "travel_class": "3A",
+        "travel_class_label": "AC 3 Tier",
+        "quota": "TQ",
+        "quota_label": "Tatkal",
+        "train_start_date": "2026-11-09",
+        "segment_count": 2,
+        "status_tier": 1,
+        "status_tier_label": "Includes RAC",
+        "segments": [
+          {
+            "sequence": 0,
+            "source": "TIR",
+            "source_name": "Tirur",
+            "destination": "TCR",
+            "destination_name": "Thrissur",
+            "departure": "2026-11-09T23:23:00+05:30",
+            "arrival": "2026-11-10T01:10:00+05:30",
+            "provider_query_date": "2026-11-09",
+            "boards_on_later_date": false,
+            "status": "AVAILABLE",
+            "availability_text": "AVL 16",
+            "raw_status": "AVAILABLE-0016",
+            "waitlist_type": null,
+            "waitlist_number": null,
+            "rac_number": null,
+            "available_count": 16,
+            "can_book": true,
+            "prediction": null,
+            "fare": {
+              "amount": "199.00",
+              "currency": "INR",
+              "basis": "MOCK_DISTANCE_FARE"
+            },
+            "checked_at": "2026-11-08T10:00:00Z",
+            "cached": false,
+            "observation_id": "955a958b-326f-4a42-90c9-f8ff663d2e87"
+          },
+          {
+            "sequence": 1,
+            "source": "TCR",
+            "source_name": "Thrissur",
+            "destination": "TVC",
+            "destination_name": "Thiruvananthapuram Central",
+            "departure": "2026-11-10T01:13:00+05:30",
+            "arrival": "2026-11-10T07:18:00+05:30",
+            "provider_query_date": "2026-11-10",
+            "boards_on_later_date": true,
+            "status": "RAC",
+            "availability_text": "RAC 3",
+            "raw_status": "RAC 3",
+            "waitlist_type": null,
+            "waitlist_number": null,
+            "rac_number": 3,
+            "available_count": null,
+            "can_book": true,
+            "prediction": {
+              "provider": "MOCK",
+              "label": "Demo estimate",
+              "text": "91% Chance",
+              "percentage": 91.0,
+              "percentage_source": "FIELD"
+            },
+            "fare": {
+              "amount": "571.00",
+              "currency": "INR",
+              "basis": "MOCK_DISTANCE_FARE"
+            },
+            "checked_at": "2026-11-08T10:00:00Z",
+            "cached": false,
+            "observation_id": "091588a4-ac96-4b32-a16c-6672b71cefe1"
+          }
+        ],
+        "total_fare": {
+          "amount": "770.00",
+          "currency": "INR",
+          "basis": null
+        },
+        "fare_complete": true,
+        "prediction_summary": {
+          "kind": "MINIMUM_SEGMENT_ESTIMATE",
+          "minimum_percentage": 91.0,
+          "segments_with_estimate": 1,
+          "segments_needing_estimate": 1,
+          "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+        },
+        "explanation": [
+          "Includes RAC on 1 segment(s).",
+          "Lowest Demo provider estimate on RAC/waitlist segments: 91%.",
+          "2 separate tickets.",
+          "Total fare INR 770.00 (every segment priced)."
+        ],
+        "booking_steps": [
+          "Ticket 1 of 2: train 90603, TIR \u2192 TCR, departing 09 Nov 2026 23:23 IST, class 3A, Tatkal (TQ) quota.",
+          "Ticket 2 of 2: train 90603, TCR \u2192 TVC, departing 10 Nov 2026 01:13 IST, class 3A, Tatkal (TQ) quota.",
+          "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at TCR.",
+          "Check every ticket on an authorized booking platform before paying."
+        ],
+        "oldest_checked_at": "2026-11-08T10:00:00Z"
+      },
+      {
+        "rank": 3,
+        "train_number": "90603",
+        "train_name": "DEMO NIGHT MAIL",
+        "travel_class": "3A",
+        "travel_class_label": "AC 3 Tier",
+        "quota": "TQ",
+        "quota_label": "Tatkal",
+        "train_start_date": "2026-11-09",
+        "segment_count": 2,
+        "status_tier": 1,
+        "status_tier_label": "Includes RAC",
+        "segments": [
+          {
+            "sequence": 0,
+            "source": "TIR",
+            "source_name": "Tirur",
+            "destination": "AWY",
+            "destination_name": "Aluva",
+            "departure": "2026-11-09T23:23:00+05:30",
+            "arrival": "2026-11-10T02:19:00+05:30",
+            "provider_query_date": "2026-11-09",
+            "boards_on_later_date": false,
+            "status": "AVAILABLE",
+            "availability_text": "AVL 75",
+            "raw_status": "AVAILABLE-0075",
+            "waitlist_type": null,
+            "waitlist_number": null,
+            "rac_number": null,
+            "available_count": 75,
+            "can_book": true,
+            "prediction": null,
+            "fare": {
+              "amount": "299.00",
+              "currency": "INR",
+              "basis": "MOCK_DISTANCE_FARE"
+            },
+            "checked_at": "2026-11-08T10:00:00Z",
+            "cached": false,
+            "observation_id": "b27b909a-91c0-41f0-a976-a7a5e5ada9c9"
+          },
+          {
+            "sequence": 1,
+            "source": "AWY",
+            "source_name": "Aluva",
+            "destination": "TVC",
+            "destination_name": "Thiruvananthapuram Central",
+            "departure": "2026-11-10T02:21:00+05:30",
+            "arrival": "2026-11-10T07:18:00+05:30",
+            "provider_query_date": "2026-11-10",
+            "boards_on_later_date": true,
+            "status": "RAC",
+            "availability_text": "RAC 5",
+            "raw_status": "RAC 5",
+            "waitlist_type": null,
+            "waitlist_number": null,
+            "rac_number": 5,
+            "available_count": null,
+            "can_book": true,
+            "prediction": {
+              "provider": "MOCK",
+              "label": "Demo estimate",
+              "text": "87% Chance",
+              "percentage": 87.0,
+              "percentage_source": "FIELD"
+            },
+            "fare": {
+              "amount": "471.00",
+              "currency": "INR",
+              "basis": "MOCK_DISTANCE_FARE"
+            },
+            "checked_at": "2026-11-08T10:00:00Z",
+            "cached": false,
+            "observation_id": "99feb6fe-55c3-4e4a-ad58-b4b6c150a007"
+          }
+        ],
+        "total_fare": {
+          "amount": "770.00",
+          "currency": "INR",
+          "basis": null
+        },
+        "fare_complete": true,
+        "prediction_summary": {
+          "kind": "MINIMUM_SEGMENT_ESTIMATE",
+          "minimum_percentage": 87.0,
+          "segments_with_estimate": 1,
+          "segments_needing_estimate": 1,
+          "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+        },
+        "explanation": [
+          "Includes RAC on 1 segment(s).",
+          "Lowest Demo provider estimate on RAC/waitlist segments: 87%.",
+          "2 separate tickets.",
+          "Total fare INR 770.00 (every segment priced)."
+        ],
+        "booking_steps": [
+          "Ticket 1 of 2: train 90603, TIR \u2192 AWY, departing 09 Nov 2026 23:23 IST, class 3A, Tatkal (TQ) quota.",
+          "Ticket 2 of 2: train 90603, AWY \u2192 TVC, departing 10 Nov 2026 02:21 IST, class 3A, Tatkal (TQ) quota.",
+          "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at AWY.",
+          "Check every ticket on an authorized booking platform before paying."
+        ],
+        "oldest_checked_at": "2026-11-08T10:00:00Z"
+      }
+    ],
+    "warnings": [
+      "Demo mode: trains and availability are simulated mock data, not live railway information.",
+      "The per-search availability request budget was used up before every candidate segment could be checked.",
+      "Each segment is a separate reservation and may create a separate PNR.",
+      "Availability can change before you book. Booking one segment does not reserve the others.",
+      "Each ticket may get a different coach, berth or status; you may have to change seats where one segment ends and the next begins.",
+      "Availability is checked for a single-passenger ticket and does not guarantee seats for a group.",
+      "A segment can be bookable while waitlisted; bookable does not mean confirmed.",
+      "Predictions are RailKit's own estimates, not guarantees, and never change the current status.",
+      "Separate tickets are not a through ticket and do not grant break-of-journey rights.",
+      "Verify every segment on an authorized booking platform before paying.",
+      "RailRoute is independent and is not affiliated with Indian Railways or IRCTC."
+    ],
+    "error": null,
+    "stale_after_seconds": 300,
+    "created_at": "2026-11-08T10:00:00Z",
+    "started_at": "2026-11-08T10:00:00Z",
+    "completed_at": "2026-11-08T10:00:00Z"
+  },
+  "not_open": {
+    "search_id": "9b528634-fd22-46fb-8a13-8a127f4fb9e9",
+    "status": "COMPLETED",
+    "status_url": "/api/v1/journeys/9b528634-fd22-46fb-8a13-8a127f4fb9e9",
+    "data_mode": "DEMO",
+    "provider": "MOCK",
+    "request": {
+      "source": "TIR",
+      "destination": "TVC",
+      "journey_date": "2026-11-20",
+      "classes": [
+        "3A"
+      ],
+      "quota": "GN",
+      "quotas": [
+        "GN",
+        "TQ"
+      ],
+      "filters": {
+        "allow_rac": true,
+        "allow_waitlist": false
+      },
+      "max_segments": 4,
+      "train_numbers": null
+    },
+    "search_completeness": "PARTIAL_QUOTA_NOT_QUERIED",
+    "incomplete_reason": "QUOTA_NOT_QUERIED",
+    "coverage": {
+      "trains_found": 2,
+      "trains_evaluated": 2,
+      "combinations_evaluated": 2,
+      "combinations_not_queried": 2,
+      "availability_requests_planned": 25,
+      "availability_requests_made": 25,
+      "request_budget": 40,
+      "cache_hits": 0,
+      "segments_checked": 25,
+      "segments_unknown": 0,
+      "segments_failed": 0
+    },
+    "trains": [
+      {
+        "train_number": "90601",
+        "train_name": "DEMO COASTAL EXPRESS",
+        "evaluation": "EVALUATED",
+        "route_issues": [],
+        "departure": "2026-11-20T22:04:00+05:30",
+        "arrival": "2026-11-21T05:58:00+05:30",
+        "intermediate_stops_total": 13,
+        "intermediate_stops_considered": 13,
+        "classes": [
+          {
+            "travel_class": "3A",
+            "quota": "GN",
+            "quota_label": "General",
+            "state": "SOLVED",
+            "queried": true,
+            "depth_reached": 2,
+            "best_status_tier": 0,
+            "recommendations": 1,
+            "eligibility": {
+              "quota": "GN",
+              "state": "NOT_APPLICABLE",
+              "queryable": true,
+              "class_category": "AC",
+              "train_origin_date": "2026-11-20",
+              "opens_at": null,
+              "message": "General (GN): no booking-window restriction applies."
+            }
+          },
+          {
+            "travel_class": "3A",
+            "quota": "TQ",
+            "quota_label": "Tatkal",
+            "state": "NOT_YET_OPEN",
+            "queried": false,
+            "depth_reached": 0,
+            "best_status_tier": null,
+            "recommendations": 0,
+            "eligibility": {
+              "quota": "TQ",
+              "state": "NOT_YET_OPEN",
+              "queryable": false,
+              "class_category": "AC",
+              "train_origin_date": "2026-11-20",
+              "opens_at": "2026-11-19T10:00:00+05:30",
+              "message": "Tatkal (TQ) booking for class 3A opens on 19 Nov 2026 at 10:00 IST (the train leaves its origin station on 20 Nov 2026). Not checked yet \u2014 search again after it opens."
+            }
+          }
+        ]
+      },
+      {
+        "train_number": "90603",
+        "train_name": "DEMO NIGHT MAIL",
+        "evaluation": "EVALUATED",
+        "route_issues": [],
+        "departure": "2026-11-20T23:23:00+05:30",
+        "arrival": "2026-11-21T07:18:00+05:30",
+        "intermediate_stops_total": 7,
+        "intermediate_stops_considered": 7,
+        "classes": [
+          {
+            "travel_class": "3A",
+            "quota": "GN",
+            "quota_label": "General",
+            "state": "SOLVED",
+            "queried": true,
+            "depth_reached": 4,
+            "best_status_tier": 0,
+            "recommendations": 3,
+            "eligibility": {
+              "quota": "GN",
+              "state": "NOT_APPLICABLE",
+              "queryable": true,
+              "class_category": "AC",
+              "train_origin_date": "2026-11-20",
+              "opens_at": null,
+              "message": "General (GN): no booking-window restriction applies."
+            }
+          },
+          {
+            "travel_class": "3A",
+            "quota": "TQ",
+            "quota_label": "Tatkal",
+            "state": "NOT_YET_OPEN",
+            "queried": false,
+            "depth_reached": 0,
+            "best_status_tier": null,
+            "recommendations": 0,
+            "eligibility": {
+              "quota": "TQ",
+              "state": "NOT_YET_OPEN",
+              "queryable": false,
+              "class_category": "AC",
+              "train_origin_date": "2026-11-20",
+              "opens_at": "2026-11-19T10:00:00+05:30",
+              "message": "Tatkal (TQ) booking for class 3A opens on 19 Nov 2026 at 10:00 IST (the train leaves its origin station on 20 Nov 2026). Not checked yet \u2014 search again after it opens."
+            }
+          }
+        ]
+      }
+    ],
+    "quotas": [
+      {
+        "quota": "GN",
+        "quota_label": "General",
+        "provider_supported": true,
+        "queried": true,
+        "combinations_eligible": 2,
+        "combinations_not_queried": 0,
+        "next_opening_at": null,
+        "not_queried": [],
+        "recommendations": 4
+      },
+      {
+        "quota": "TQ",
+        "quota_label": "Tatkal",
+        "provider_supported": true,
+        "queried": false,
+        "combinations_eligible": 0,
+        "combinations_not_queried": 2,
+        "next_opening_at": "2026-11-19T10:00:00+05:30",
+        "not_queried": [
+          {
+            "state": "NOT_YET_OPEN",
+            "combinations": 2,
+            "travel_classes": [
+              "3A"
+            ],
+            "opens_at": "2026-11-19T10:00:00+05:30",
+            "message": "Tatkal (TQ) was not checked for 2 train/class combinations: booking is not open yet (first opening 19 Nov 2026 at 10:00 IST). It is not re-checked automatically \u2014 search again after it opens."
+          }
+        ],
+        "recommendations": 0
+      }
+    ],
+    "recommendations": [
+      {
+        "rank": 1,
+        "train_number": "90601",
+        "train_name": "DEMO COASTAL EXPRESS",
+        "travel_class": "3A",
+        "travel_class_label": "AC 3 Tier",
+        "quota": "GN",
+        "quota_label": "General",
+        "train_start_date": "2026-11-20",
+        "segment_count": 2,
+        "status_tier": 0,
+        "status_tier_label": "All segments confirmed or available",
+        "segments": [
+          {
+            "sequence": 0,
+            "source": "TIR",
+            "source_name": "Tirur",
+            "destination": "ERS",
+            "destination_name": "Ernakulam Junction",
+            "departure": "2026-11-20T22:04:00+05:30",
+            "arrival": "2026-11-21T01:17:00+05:30",
+            "provider_query_date": "2026-11-20",
+            "boards_on_later_date": false,
+            "status": "AVAILABLE",
+            "availability_text": "AVL 7",
+            "raw_status": "AVAILABLE-0007",
+            "waitlist_type": null,
+            "waitlist_number": null,
+            "rac_number": null,
+            "available_count": 7,
+            "can_book": true,
+            "prediction": null,
+            "fare": {
+              "amount": "260.00",
+              "currency": "INR",
+              "basis": "MOCK_DISTANCE_FARE"
+            },
+            "checked_at": "2026-11-08T10:00:00Z",
+            "cached": false,
+            "observation_id": "efa762ae-0934-4446-8695-2c9d37bbe147"
+          },
+          {
+            "sequence": 1,
+            "source": "ERS",
+            "source_name": "Ernakulam Junction",
+            "destination": "TVC",
+            "destination_name": "Thiruvananthapuram Central",
+            "departure": "2026-11-21T01:27:00+05:30",
+            "arrival": "2026-11-21T05:58:00+05:30",
+            "provider_query_date": "2026-11-21",
+            "boards_on_later_date": true,
+            "status": "AVAILABLE",
+            "availability_text": "AVL 31",
+            "raw_status": "AVAILABLE-0031",
+            "waitlist_type": null,
+            "waitlist_number": null,
+            "rac_number": null,
+            "available_count": 31,
+            "can_book": true,
+            "prediction": null,
+            "fare": {
+              "amount": "363.00",
+              "currency": "INR",
+              "basis": "MOCK_DISTANCE_FARE"
+            },
+            "checked_at": "2026-11-08T10:00:00Z",
+            "cached": false,
+            "observation_id": "59c142af-8d67-4f66-8bfe-81e8e4737131"
+          }
+        ],
+        "total_fare": {
+          "amount": "623.00",
+          "currency": "INR",
+          "basis": null
+        },
+        "fare_complete": true,
+        "prediction_summary": {
+          "kind": "MINIMUM_SEGMENT_ESTIMATE",
+          "minimum_percentage": null,
+          "segments_with_estimate": 0,
+          "segments_needing_estimate": 0,
+          "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+        },
+        "explanation": [
+          "Every segment is currently confirmed or available.",
+          "2 separate tickets.",
+          "Total fare INR 623.00 (every segment priced)."
+        ],
+        "booking_steps": [
+          "Ticket 1 of 2: train 90601, TIR \u2192 ERS, departing 20 Nov 2026 22:04 IST, class 3A, General (GN) quota.",
+          "Ticket 2 of 2: train 90601, ERS \u2192 TVC, departing 21 Nov 2026 01:27 IST, class 3A, General (GN) quota.",
+          "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at ERS.",
+          "Check every ticket on an authorized booking platform before paying."
+        ],
+        "oldest_checked_at": "2026-11-08T10:00:00Z"
+      }
+    ],
+    "warnings": [
+      "Demo mode: trains and availability are simulated mock data, not live railway information.",
+      "Tatkal (TQ) was not checked for 2 train/class combinations: booking is not open yet (first opening 19 Nov 2026 at 10:00 IST). It is not re-checked automatically \u2014 search again after it opens.",
+      "Some selected quotas were not checked (see the quota notes); the results cover only what was checked.",
+      "Each segment is a separate reservation and may create a separate PNR.",
+      "Availability can change before you book. Booking one segment does not reserve the others.",
+      "Each ticket may get a different coach, berth or status; you may have to change seats where one segment ends and the next begins.",
+      "Availability is checked for a single-passenger ticket and does not guarantee seats for a group.",
+      "A segment can be bookable while waitlisted; bookable does not mean confirmed.",
+      "Predictions are RailKit's own estimates, not guarantees, and never change the current status.",
+      "Separate tickets are not a through ticket and do not grant break-of-journey rights.",
+      "Verify every segment on an authorized booking platform before paying.",
+      "RailRoute is independent and is not affiliated with Indian Railways or IRCTC."
+    ],
+    "error": null,
+    "stale_after_seconds": 300,
+    "created_at": "2026-11-08T10:00:00Z",
+    "started_at": "2026-11-08T10:00:00Z",
+    "completed_at": "2026-11-08T10:00:00Z"
+  }
+}

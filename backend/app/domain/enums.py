@@ -17,9 +17,23 @@ class AvailabilityStatus(StrEnum):
 
 
 class Quota(StrEnum):
-    """MVP supports General quota only; enforced server-side."""
+    """Reservation quotas RailRoute can search (docs/08 D-20). Never mixed within one journey."""
 
     GENERAL = "GN"
+    TATKAL = "TQ"
+
+    @property
+    def label(self) -> str:
+        return QUOTA_LABELS[self]
+
+
+QUOTA_LABELS: dict[Quota, str] = {
+    Quota.GENERAL: "General",
+    Quota.TATKAL: "Tatkal",
+}
+
+#: Canonical order: results, combinations and summaries always list quotas in this order.
+QUOTA_ORDER: tuple[Quota, ...] = (Quota.GENERAL, Quota.TATKAL)
 
 
 class TravelClass(StrEnum):
@@ -112,6 +126,8 @@ class SearchCompleteness(StrEnum):
     PARTIAL_BUDGET = "PARTIAL_BUDGET"
     PARTIAL_PROVIDER_ERRORS = "PARTIAL_PROVIDER_ERRORS"
     PARTIAL_TIMEOUT = "PARTIAL_TIMEOUT"
+    #: Some selected quota combinations were deliberately not queried (e.g. Tatkal not open yet).
+    PARTIAL_QUOTA_NOT_QUERIED = "PARTIAL_QUOTA_NOT_QUERIED"
     NO_PATH_FOUND = "NO_PATH_FOUND"
     NO_PATH_FOUND_PARTIAL = "NO_PATH_FOUND_PARTIAL"
 
@@ -123,3 +139,4 @@ class IncompleteReason(StrEnum):
     PROVIDER_AUTH_ERROR = "PROVIDER_AUTH_ERROR"
     PROVIDER_ERRORS = "PROVIDER_ERRORS"
     SEARCH_DEADLINE_REACHED = "SEARCH_DEADLINE_REACHED"
+    QUOTA_NOT_QUERIED = "QUOTA_NOT_QUERIED"

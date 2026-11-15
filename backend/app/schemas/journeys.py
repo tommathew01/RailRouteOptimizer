@@ -16,12 +16,20 @@ from app.schemas.common import ApiModel
 from app.schemas.shared import (
     ClassCode,
     DataMode,
+    EligibilityState,
     FareOut,
     IgnoredQuota,
     PredictionOut,
+    QuotaCode,
+    QuotaEligibilityOut,
+    QuotaLiteral,
     StationCode,
     TrainNumber,
 )
+
+
+def _general_only() -> list[QuotaLiteral]:
+    return ["GN"]
 
 
 class JourneyFilters(ApiModel):
@@ -43,9 +51,18 @@ class OptimizeRequest(ApiModel):
     train_numbers: list[TrainNumber] | None = Field(
         default=None, max_length=20, description="Optional: only optimize these trains."
     )
+    quotas: list[QuotaCode] = Field(
+        default_factory=_general_only,
+        min_length=1,
+        max_length=2,
+        description=(
+            "Quotas to search; each is optimized separately and never mixed within a journey. "
+            "Tatkal is only queried once its booking window is open."
+        ),
+    )
     quota: IgnoredQuota = None
 
-    @field_validator("classes", "train_numbers")
+    @field_validator("classes", "train_numbers", "quotas")
     @classmethod
     def _unique(cls, value: list[str] | None) -> list[str] | None:
         return None if value is None else list(dict.fromkeys(value))
@@ -62,7 +79,8 @@ class SearchRequestEcho(ApiModel):
     destination: str
     journey_date: date
     classes: list[str]
-    quota: Literal["GN"] = "GN"
+    quota: QuotaLiteral = Field(default="GN", description="Deprecated: the first of `quotas`.")
+    quotas: list[QuotaLiteral] = Field(default_factory=_general_only)
     filters: JourneyFilters
     max_segments: int
     train_numbers: list[str] | None
@@ -71,7 +89,11 @@ class SearchRequestEcho(ApiModel):
 class Coverage(ApiModel):
     trains_found: int
     trains_evaluated: int
-    combinations_evaluated: int = Field(description="Train x class combinations explored.")
+    combinations_evaluated: int = Field(description="Train x class x quota combinations explored.")
+    combinations_not_queried: int = Field(
+        default=0,
+        description="Offered combinations deliberately not queried (e.g. Tatkal not open yet).",
+    )
     availability_requests_planned: int = Field(
         description="Requests made + cache hits + requests still needed at the depth reached."
     )
@@ -127,7 +149,8 @@ class RecommendationOut(ApiModel):
     train_name: str | None
     travel_class: str
     travel_class_label: str
-    quota: Literal["GN"] = "GN"
+    quota: QuotaLiteral = "GN"
+    quota_label: str = "General"
     train_start_date: date
     segment_count: int
     status_tier: int
@@ -142,10 +165,50 @@ class RecommendationOut(ApiModel):
 
 
 class ClassEvaluation(ApiModel):
+    """One train x class x quota. Not-queried quotas are never reported as unavailable."""
+
     travel_class: str
-    state: Literal["SOLVED", "EXHAUSTED", "STOPPED", "ACTIVE", "NOT_OFFERED", "NOT_EVALUATED"]
+    quota: QuotaLiteral = "GN"
+    quota_label: str = "General"
+    state: Literal[
+        "SOLVED",
+        "EXHAUSTED",
+        "STOPPED",
+        "ACTIVE",
+        "NOT_OFFERED",
+        "NOT_EVALUATED",
+        "NOT_YET_OPEN",
+        "QUOTA_NOT_SUPPORTED",
+        "NOT_QUERIED",
+    ]
+    queried: bool = Field(default=True, description="False when the provider was not asked.")
     depth_reached: int
     best_status_tier: int | None
+    recommendations: int
+    eligibility: QuotaEligibilityOut | None = None
+
+
+class QuotaSkipGroup(ApiModel):
+    state: EligibilityState
+    combinations: int
+    travel_classes: list[str]
+    opens_at: datetime | None = Field(description="Earliest booking window opening (IST).")
+    message: str
+
+
+class QuotaSummary(ApiModel):
+    """Per-quota completeness. ``queried`` is False when the provider was never asked."""
+
+    quota: QuotaLiteral
+    quota_label: str
+    provider_supported: bool
+    queried: bool
+    combinations_eligible: int = Field(description="Combinations whose booking window allowed it.")
+    combinations_not_queried: int
+    next_opening_at: datetime | None = Field(
+        description="Earliest future booking window opening among skipped combinations (IST)."
+    )
+    not_queried: list[QuotaSkipGroup]
     recommendations: int
 
 
@@ -184,6 +247,7 @@ class JourneySearchResponse(ApiModel):
     incomplete_reason: str | None
     coverage: Coverage | None
     trains: list[TrainEvaluation]
+    quotas: list[QuotaSummary] = Field(default_factory=list)
     recommendations: list[RecommendationOut]
     warnings: list[str]
     error: SearchError | None = None

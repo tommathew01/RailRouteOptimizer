@@ -1,4 +1,4 @@
-"""Direct segment availability check (doc 05 §4). Quota is never accepted from the client."""
+"""Direct segment availability check (doc 05 §4), for one quota (General by default)."""
 
 from __future__ import annotations
 
@@ -12,8 +12,10 @@ from app.schemas.shared import (
     ClassCode,
     DataMode,
     FareOut,
-    IgnoredQuota,
     PredictionOut,
+    QuotaCode,
+    QuotaEligibilityOut,
+    QuotaLiteral,
     StationCode,
     TrainNumber,
 )
@@ -25,7 +27,13 @@ class AvailabilityCheckRequest(ApiModel):
     destination: StationCode
     journey_date: date = Field(description="Date you depart the segment's source station (IST).")
     travel_class: ClassCode
-    quota: IgnoredQuota = None
+    quota: QuotaCode | None = Field(
+        default=None,
+        description=(
+            "GN (default) or TQ. Tatkal is only queried once its booking "
+            "window is open; otherwise the response has queried=false and no availability."
+        ),
+    )
 
 
 class AvailabilityCheckResponse(ApiModel):
@@ -34,15 +42,23 @@ class AvailabilityCheckResponse(ApiModel):
     destination: str
     journey_date: date
     provider_query_date: date = Field(description="Date sent to the provider (see date policy).")
-    train_start_date: date
+    train_start_date: date | None = Field(
+        description="Date the train leaves its origin station; null only if never determined."
+    )
     travel_class: str
-    quota: str = "GN"
-    availability: AvailabilityOut
+    quota: QuotaLiteral = "GN"
+    quota_label: str = "General"
+    queried: bool = Field(
+        default=True,
+        description="False when the provider was not asked (see eligibility). Never 'unavailable'.",
+    )
+    eligibility: QuotaEligibilityOut | None = None
+    availability: AvailabilityOut | None = Field(description="Null only when queried is false.")
     prediction: PredictionOut | None
     fare: FareOut | None
     provider: str
     provider_checked_at: datetime | None
-    checked_at: datetime
+    checked_at: datetime | None = Field(description="Null only when queried is false.")
     cached: bool
     anomalies: list[str]
     data_mode: DataMode

@@ -4,14 +4,17 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { BookingGuidance, CoverageNotice, RecommendationCard } from "@/components/Results";
+import { BookingGuidance, CoverageNotice, QuotaStatus, RecommendationCard } from "@/components/Results";
 import { StationAutocomplete } from "@/components/StationAutocomplete";
 import { AvailabilityBadge, PredictionIndicator } from "@/components/StatusBits";
 import { JourneySearchSchema } from "@/lib/api/schemas";
 
 import fixture from "../../test/fixtures/journey-search.json";
+import quotaFixture from "../../test/fixtures/journey-search-quotas.json";
 
 const search = JourneySearchSchema.parse(fixture);
+const quotaOpen = JourneySearchSchema.parse(quotaFixture.open);
+const quotaClosed = JourneySearchSchema.parse(quotaFixture.not_open);
 
 function withQueryClient(node: ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -78,6 +81,33 @@ describe("Coverage and guidance", () => {
     render(<BookingGuidance warnings={search.warnings} />);
     expect(screen.getByText(/separate reservation/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "irctc.co.in" })).toHaveAttribute("rel", "noopener noreferrer");
+  });
+});
+
+describe("Quotas", () => {
+  it("labels each recommendation with its own quota", () => {
+    const tatkal = quotaOpen.recommendations.find((r) => r.quota === "TQ");
+    expect(tatkal).toBeDefined();
+    render(<RecommendationCard recommendation={tatkal!} staleAfter={300} />);
+    expect(screen.getByText(/Tatkal \(TQ\) quota/)).toBeInTheDocument();
+  });
+
+  it("shows a quota that is not open yet as not checked, never as unavailable", () => {
+    render(<QuotaStatus search={quotaClosed} />);
+    const tatkal = screen.getByText(/^Tatkal \(TQ\)$/).closest("li");
+    expect(tatkal).toHaveTextContent("not checked — booking opens 19 Nov 2026, 10:00 IST");
+    expect(tatkal).not.toHaveTextContent(/unavailable|not available/i);
+    expect(screen.getByText(/not re-checked automatically/)).toBeInTheDocument();
+  });
+
+  it("stays out of the way for a plain General search", () => {
+    const { container } = render(<QuotaStatus search={search} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("names the partial state when quotas were not checked", () => {
+    render(<CoverageNotice search={quotaClosed} />);
+    expect(screen.getByText(/some quotas not checked yet/i)).toBeInTheDocument();
   });
 });
 

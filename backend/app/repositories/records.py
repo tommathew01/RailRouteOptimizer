@@ -30,7 +30,10 @@ class SearchRecord:
     request_budget: int
     provider: str
     created_at: datetime
+    #: Legacy single-quota column; always the first entry of ``quotas`` (set in __post_init__).
     quota: str = "GN"
+    #: Selected quotas in canonical order (GN, TQ).
+    quotas: list[str] = field(default_factory=lambda: ["GN"])
     status: SearchStatus = SearchStatus.QUEUED
     search_completeness: SearchCompleteness | None = None
     incomplete_reason: IncompleteReason | None = None
@@ -41,6 +44,11 @@ class SearchRecord:
     started_at: datetime | None = None
     completed_at: datetime | None = None
     updated_at: datetime | None = None
+
+    def __post_init__(self) -> None:
+        if not self.quotas:
+            raise ValueError("a search needs at least one quota")
+        self.quota = self.quotas[0]
 
 
 @dataclass(frozen=True, slots=True)

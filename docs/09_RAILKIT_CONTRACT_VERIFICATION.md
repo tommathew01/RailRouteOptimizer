@@ -76,6 +76,7 @@ There is **no class list** in this response.
 | Q13 | Which responses count against the monthly quota (4xx/5xx/retries)? Billing-cycle boundary? `Retry-After`? | Every attempt counted locally; month boundary = IST calendar month; 429 never retried in-call | Account dashboard |
 | Q14 | Caching, storage, display and commercial redistribution rights | **Not stated anywhere.** TTLs are short and configurable; launch gate in doc 06 §8 remains open | Written confirmation from RailKit |
 | Q15 | Echo validation: does `data.train.{trainNo,from,to,travelClass,quota}` always echo the request? | Present-and-different → `INVALID_RESPONSE`; absent → accepted with anomaly | Same |
+| Q16 | Which quotas does seat availability accept? (Docs page lists GN, TQ, PT, …; SDK README says PT is fare-lookup only.) | **Answered 2026-11-15 (§5)**: `RAILKIT_SUPPORTED_QUOTAS=GN,TQ`; PT removed from the product (docs/08 D-26) | 3 requests: 12904 ASR→LDH 3A TQ, 3A PT, SL TQ |
 
 ## 5. Live findings
 
@@ -83,6 +84,7 @@ There is **no class list** in this response.
 |---|---|---|
 | 2026-11-14 | Free (50 req/month, "SDK Access only") | First request rejected: `403 Missing SDK signature headers. To use the API, please upgrade your plan.` |
 | 2026-11-14 | Paid (direct REST) | Walkthrough passed twice (about 10 requests). Answers below; payloads in `backend/tests/fixtures/railkit/live/2026-11-14/` and pinned by `tests/unit/providers/test_railkit_live_fixtures.py`. |
+| 2026-11-15 13:13 IST | Advance (direct REST) | Quota probe, 3 requests (train 12904, origin date 16 Nov, Tatkal window open). Payloads in `live/2026-11-15/`. |
 
 ### Answers
 
@@ -100,6 +102,7 @@ There is **no class list** in this response.
 | Q11 | `route[]` lists stoppages only (every intermediate stop has a halt); `day` is a 1-based string; `"--"` marks origin arrival and terminus departure. `running_days` is **Monday-first** (17/17 trains have the Saturday bit for a Saturday search, against 9/17 if Sunday-first). `trainInfo` also has `prs_classes` (reservable classes only). | None. |
 | Q12 | A date the train does not serve for a valid pair returns `400 Unable to process your request`, mapped to `PROVIDER_REJECTED` (never "not available"). Invalid stop pairs remain untested. | None. |
 | Q15 | Every response echoed the requested train, stations, class and quota. | None. |
+| Q16 | **TQ is accepted; PT is not.** 3A TQ → `AVAILABLE-0026`, `totalFare` 1170 (Tatkal fare), echo `quota: "TQ"`; SL TQ → `AVAILABLE-0032`, 440. **The TQ list holds only the requested date** (GN returns four run dates). 3A **PT → `400 Quota not allowed`** (an API-level message, consistent with the SDK README; not shown to be train-specific). | Premium Tatkal is not offered (docs/08 D-26). Whether PT works for other trains/plans was not tested. |
 | New | **Train search matches station clusters.** NDLS→BCT returned 17 trains and none ran NDLS→BCT exactly (NZM/DEE/NDLS → BDTS/CSMT/MMCT/PNVL/BSR). Extra fields: `classes_of_travel` (empty), `train_type_name`, Hindi names. | The train list offers a one-click search for the stations each train really uses; recommendations still start and end at the searched stations. |
 
 Still open: Q10 (whether `EA`, `VS`, … are accepted), Q12 for invalid stop pairs, Q13 (what counts against the quota, billing-cycle boundary, `Retry-After`). Q14 (usage rights) is set aside by the product owner.

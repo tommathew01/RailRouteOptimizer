@@ -51,6 +51,10 @@ export const COMPLETENESS_TEXT: Record<string, { title: string; tone: "info" | "
   PARTIAL_BUDGET: { title: "Partial search — request budget reached", tone: "warning" },
   PARTIAL_PROVIDER_ERRORS: { title: "Partial search — some checks failed", tone: "warning" },
   PARTIAL_TIMEOUT: { title: "Partial search — time limit reached", tone: "warning" },
+  PARTIAL_QUOTA_NOT_QUERIED: {
+    title: "Partial search — some quotas not checked yet",
+    tone: "warning",
+  },
   NO_PATH_FOUND: { title: "No combination found", tone: "info" },
   NO_PATH_FOUND_PARTIAL: {
     title: "No combination found in the segments checked",

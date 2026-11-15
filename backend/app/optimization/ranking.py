@@ -8,7 +8,10 @@ Sort key, best first:
 3. fewer segments (tickets);
 4. lower total fare, only when every segment is priced in the same currency;
 5. fresher observations (oldest segment observation, minute buckets);
-6. a stable tie-breaker (train, class, stations).
+6. a stable tie-breaker (train, class, quota in GN/TQ order, start date, stations).
+
+Quotas never change the order above: each path belongs to exactly one quota (its graph key), and a
+Tatkal path competes with a General path on availability, prediction, tickets and fare alone.
 """
 
 from __future__ import annotations
@@ -18,7 +21,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 
-from app.domain.enums import AvailabilityStatus, StatusTier
+from app.domain.enums import QUOTA_ORDER, AvailabilityStatus, StatusTier
 from app.optimization.graph import GraphKey
 from app.optimization.paths import CandidatePath
 
@@ -131,7 +134,13 @@ def rank_paths(
             path.segment_count,
             fare_key,
             -int(oldest.timestamp() // 60),
-            (key.train_number, key.travel_class, key.train_start_date.isoformat(), path.stations),
+            (
+                key.train_number,
+                key.travel_class,
+                QUOTA_ORDER.index(key.quota),
+                key.train_start_date.isoformat(),
+                path.stations,
+            ),
         )
         ranked = RankedPath(
             rank=0,

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Protocol, runtime_checkable
 
+from app.domain.enums import Quota
 from app.domain.models import (
     AvailabilityQuery,
     AvailabilityRecord,
@@ -25,6 +26,11 @@ class RailwayProvider(Protocol):
     @property
     def is_live(self) -> bool:
         """``False`` for simulated (demo) data; drives the DEMO labelling everywhere."""
+        ...
+
+    @property
+    def supported_quotas(self) -> frozenset[Quota]:
+        """Quotas the availability endpoint accepts. Others are never sent (no substitution)."""
         ...
 
     async def search_stations(self, query: str) -> list[Station]: ...

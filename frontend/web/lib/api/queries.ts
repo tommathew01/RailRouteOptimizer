@@ -78,6 +78,8 @@ export type OptimizeInput = {
   classes: string[];
   filters: { allow_rac: boolean; allow_waitlist: boolean };
   train_numbers?: string[];
+  /** Searched separately and never mixed; defaults to General (GN) on the server. */
+  quotas?: string[];
 };
 
 export async function startOptimization(input: OptimizeInput): Promise<{

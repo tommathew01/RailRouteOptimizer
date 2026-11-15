@@ -208,7 +208,9 @@ Production:
 - ADR-004: Provider adapter isolates external API.
 - ADR-005: DAG represents one train's forward station route.
 - ADR-006: Maximum four segments.
-- ADR-007: General quota only in MVP.
+- ADR-007: General quota only in MVP. **Superseded 2026-11-15** by docs/08 D-20…D-25 (GN/TQ,
+  separate search spaces, eligibility service `app/services/quota_eligibility.py` over the pure
+  `app/domain/quota_eligibility.py`).
 - ADR-008: Provider prediction is optional secondary ranking input, not truth.
 - ADR-009: No passenger count; segment check is one-ticket availability.
 - ADR-010: Search completeness and API budget are first-class response fields.

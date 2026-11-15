@@ -34,7 +34,7 @@ A candidate reservation request from one train stop to a later train stop:
 - from route index
 - to route index
 - class
-- quota (`GN`)
+- quota (`GN` or `TQ`)
 
 A segment is valid only if `from_index < to_index`.
 
@@ -79,8 +79,18 @@ Before checking segments:
 - User selects one or more classes supported by RailKit and train.
 - Each class is optimized independently.
 - Do not mix classes within one recommendation.
-- General quota is fixed to `GN` in MVP.
-- Backend enforces quota even if a client submits another value.
+- Quotas: General (`GN`, default), Tatkal (`TQ`); the user selects one or both. Premium Tatkal (`PT`) is not offered
+  (RailKit rejects it).
+- Each quota is optimized independently; one recommendation never mixes quotas.
+- The Tatkal window opens `days_before` (default 1) calendar days before the train's
+  **origin date** at 10:00 IST (AC classes) / 11:00 IST (non-AC), configurable. TQ
+  is queried only once open; before that it is reported as "not checked — opens at …", never
+  as unavailable, and it is not re-queried automatically.
+- Class categories come from one mapping (`app/domain/quota_eligibility.py`): AC = 1A, 2A, 3A, 3E,
+  CC, EC, EA, VA; non-AC = SL, 2S, FC, VS. `VC`, `CH`, `HS` are deliberately unclassified and are
+  not queried for TQ.
+- A quota the provider does not support is reported and never substituted.
+- An open window does not imply availability; only the provider's answer does.
 - Unsupported class should return a validation error, not be silently dropped.
 - Train-specific class support must be checked where available.
 

@@ -4,7 +4,7 @@ import random
 from datetime import timedelta
 from decimal import Decimal
 
-from app.domain.enums import StatusTier
+from app.domain.enums import Quota, StatusTier
 from app.optimization.graph import GraphKey, build_graph
 from app.optimization.paths import CandidatePath, find_paths
 from app.optimization.policy import SearchFilters
@@ -14,8 +14,10 @@ from tests.unit.optimization.builders import INDEX, OBSERVED, S, key, obs
 ALL = SearchFilters(allow_rac=True, allow_waitlist=True)
 
 
-def path_of(*observations, cls: str = "3A", train: str = "12345") -> tuple[GraphKey, CandidatePath]:
-    k = key(train=train, cls=cls)
+def path_of(
+    *observations, cls: str = "3A", train: str = "12345", quota: Quota = Quota.GENERAL
+) -> tuple[GraphKey, CandidatePath]:
+    k = key(train=train, cls=cls, quota=quota)
     graph = build_graph(k, observations, INDEX, ALL)
     src, dst = INDEX[observations[0].key.from_station], INDEX[observations[-1].key.to_station]
     [path] = [p for p in find_paths(graph, src, dst) if p.segment_count == len(observations)]
@@ -151,3 +153,38 @@ def test_candidate_path_helpers() -> None:
     _, path = path_of(obs("TIR", "ERS", S.AVAILABLE), obs("ERS", "TVC", S.AVAILABLE))
     assert isinstance(path, CandidatePath)
     assert path.indices == (0, 4, 7)
+
+
+# --- Quotas: separate search spaces, same ranking rules -----------------------------------------
+def test_quota_never_outranks_availability() -> None:
+    tq = Quota.TATKAL
+    general_waitlist = path_of(obs("TIR", "TVC", S.WAITLIST, pct=90))
+    tatkal_available = path_of(
+        obs("TIR", "ERS", S.AVAILABLE, quota=tq),
+        obs("ERS", "TVC", S.AVAILABLE, quota=tq),
+        quota=tq,
+    )
+    ranked = rank_paths([general_waitlist, tatkal_available])
+    assert [r.key.quota for r in ranked] == [Quota.TATKAL, Quota.GENERAL]
+
+
+def test_identical_paths_in_two_quotas_stay_separate_and_order_deterministically() -> None:
+    tq = Quota.TATKAL
+    general = path_of(obs("TIR", "ERS", S.AVAILABLE), obs("ERS", "TVC", S.AVAILABLE))
+    tatkal = path_of(
+        obs("TIR", "ERS", S.AVAILABLE, quota=tq),
+        obs("ERS", "TVC", S.AVAILABLE, quota=tq),
+        quota=tq,
+    )
+    for candidates in ([general, tatkal], [tatkal, general]):
+        ranked = rank_paths(candidates)
+        assert [r.key.quota for r in ranked] == [Quota.GENERAL, Quota.TATKAL]
+        for item in ranked:  # every edge of a path carries the path's own quota
+            assert {e.observation.key.quota for e in item.path.edges} == {item.key.quota}
+
+
+def test_cheaper_general_fare_wins_over_tatkal_on_equal_status() -> None:
+    tq = Quota.TATKAL
+    general = path_of(obs("TIR", "TVC", S.AVAILABLE, fare="500"))
+    tatkal = path_of(obs("TIR", "TVC", S.AVAILABLE, quota=tq, fare="650"), quota=tq)
+    assert [r.key.quota for r in rank_paths([tatkal, general])] == [Quota.GENERAL, Quota.TATKAL]

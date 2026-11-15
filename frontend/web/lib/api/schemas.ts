@@ -13,8 +13,76 @@ export const ErrorEnvelopeSchema = z.object({
 export const DataModeSchema = z.enum(["DEMO", "LIVE"]);
 export type DataMode = z.infer<typeof DataModeSchema>;
 
+// --- Quotas ----------------------------------------------------------------------------------
+export const QuotaCodeSchema = z.enum(["GN", "TQ"]);
+export type QuotaCode = z.infer<typeof QuotaCodeSchema>;
+
+export const EligibilityStateSchema = z.enum([
+  "NOT_APPLICABLE",
+  "NOT_YET_OPEN",
+  "OPENS_TODAY",
+  "OPEN",
+  "OPENING_PASSED",
+  "JOURNEY_DATE_PASSED",
+  "CLASS_CATEGORY_UNKNOWN",
+  "UNDETERMINED",
+  "PROVIDER_UNSUPPORTED",
+]);
+
+/** Whether the backend may ask the provider for a quota. Never an availability status. */
+export const QuotaEligibilitySchema = z.object({
+  quota: QuotaCodeSchema,
+  state: EligibilityStateSchema,
+  queryable: z.boolean(),
+  class_category: z.enum(["AC", "NON_AC"]).nullable(),
+  train_origin_date: z.string().nullable(),
+  opens_at: z.string().nullable(),
+  message: z.string(),
+});
+
+export const QuotaOptionSchema = z.object({
+  code: QuotaCodeSchema,
+  label: z.string(),
+  default: z.boolean(),
+  provider_supported: z.boolean(),
+  opening_rule: z
+    .object({
+      reference: z.literal("TRAIN_ORIGIN_DATE"),
+      days_before: z.number().int(),
+      ac_opens_at: z.string(),
+      non_ac_opens_at: z.string(),
+      timezone: z.literal("Asia/Kolkata"),
+    })
+    .nullable(),
+  note: z.string().nullable().optional(),
+});
+
+export const QuotaSummarySchema = z.object({
+  quota: QuotaCodeSchema,
+  quota_label: z.string(),
+  provider_supported: z.boolean(),
+  queried: z.boolean(),
+  combinations_eligible: z.number().int(),
+  combinations_not_queried: z.number().int(),
+  next_opening_at: z.string().nullable(),
+  not_queried: z.array(
+    z.object({
+      state: EligibilityStateSchema,
+      combinations: z.number().int(),
+      travel_classes: z.array(z.string()),
+      opens_at: z.string().nullable(),
+      message: z.string(),
+    }),
+  ),
+  recommendations: z.number().int(),
+});
+
 // --- Meta ------------------------------------------------------------------------------------
-export const ClassOptionSchema = z.object({ code: z.string(), label: z.string() });
+export const ClassOptionSchema = z.object({
+  code: z.string(),
+  label: z.string(),
+  category: z.enum(["AC", "NON_AC"]).nullable().optional(),
+});
 
 export const MetaSchema = z.object({
   app_name: z.string(),
@@ -22,6 +90,7 @@ export const MetaSchema = z.object({
   data_mode: DataModeSchema,
   provider: z.string(),
   quota: z.object({ code: z.literal("GN"), label: z.string(), editable: z.boolean() }),
+  quotas: z.array(QuotaOptionSchema).default([]),
   supported_classes: z.array(ClassOptionSchema),
   limits: z.object({
     max_segments: z.number().int(),
@@ -157,7 +226,8 @@ export const RecommendationSchema = z.object({
   train_name: z.string().nullable(),
   travel_class: z.string(),
   travel_class_label: z.string(),
-  quota: z.literal("GN"),
+  quota: QuotaCodeSchema,
+  quota_label: z.string().default("General"),
   train_start_date: z.string(),
   segment_count: z.number().int(),
   status_tier: z.number().int(),
@@ -179,10 +249,24 @@ export const RecommendationSchema = z.object({
 
 export const ClassEvaluationSchema = z.object({
   travel_class: z.string(),
-  state: z.enum(["SOLVED", "EXHAUSTED", "STOPPED", "ACTIVE", "NOT_OFFERED", "NOT_EVALUATED"]),
+  quota: QuotaCodeSchema.default("GN"),
+  quota_label: z.string().default("General"),
+  state: z.enum([
+    "SOLVED",
+    "EXHAUSTED",
+    "STOPPED",
+    "ACTIVE",
+    "NOT_OFFERED",
+    "NOT_EVALUATED",
+    "NOT_YET_OPEN",
+    "QUOTA_NOT_SUPPORTED",
+    "NOT_QUERIED",
+  ]),
+  queried: z.boolean().default(true),
   depth_reached: z.number().int(),
   best_status_tier: z.number().int().nullable(),
   recommendations: z.number().int(),
+  eligibility: QuotaEligibilitySchema.nullable().optional(),
 });
 
 export const TrainEvaluationSchema = z.object({
@@ -217,7 +301,8 @@ export const JourneySearchSchema = z.object({
     destination: z.string(),
     journey_date: z.string(),
     classes: z.array(z.string()),
-    quota: z.literal("GN"),
+    quota: QuotaCodeSchema,
+    quotas: z.array(QuotaCodeSchema).default(["GN"]),
     filters: z.object({ allow_rac: z.boolean(), allow_waitlist: z.boolean() }),
     max_segments: z.number().int(),
     train_numbers: z.array(z.string()).nullable(),
@@ -229,6 +314,7 @@ export const JourneySearchSchema = z.object({
       trains_found: z.number().int(),
       trains_evaluated: z.number().int(),
       combinations_evaluated: z.number().int(),
+      combinations_not_queried: z.number().int().default(0),
       availability_requests_planned: z.number().int(),
       availability_requests_made: z.number().int(),
       request_budget: z.number().int(),
@@ -239,6 +325,7 @@ export const JourneySearchSchema = z.object({
     })
     .nullable(),
   trains: z.array(TrainEvaluationSchema),
+  quotas: z.array(QuotaSummarySchema).default([]),
   recommendations: z.array(RecommendationSchema),
   warnings: z.array(z.string()),
   error: z.object({ code: z.string(), message: z.string() }).nullable().optional(),
@@ -257,6 +344,10 @@ export const SearchAcceptedSchema = z.object({
 export const OptimizeResultSchema = z.union([JourneySearchSchema, SearchAcceptedSchema]);
 
 export type Meta = z.infer<typeof MetaSchema>;
+export type QuotaOption = z.infer<typeof QuotaOptionSchema>;
+export type QuotaSummary = z.infer<typeof QuotaSummarySchema>;
+export type QuotaEligibility = z.infer<typeof QuotaEligibilitySchema>;
+export type ClassEvaluation = z.infer<typeof ClassEvaluationSchema>;
 export type ClassOption = z.infer<typeof ClassOptionSchema>;
 export type Station = z.infer<typeof StationSchema>;
 export type Train = z.infer<typeof TrainSchema>;

@@ -1,0 +1,34 @@
+{
+  "success": true,
+  "data": {
+    "train": {
+      "trainNo": "12904",
+      "trainName": "GOLDEN TEMPLE M",
+      "from": "ASR",
+      "to": "LDH",
+      "fromStationName": "Amritsar Junction",
+      "toStationName": "Ludhiana Junction",
+      "distance": 136,
+      "travelClass": "3A",
+      "quota": "TQ"
+    },
+    "fare": {
+      "baseFare": 729,
+      "reservationCharge": 40,
+      "superfastCharge": 45,
+      "serviceTax": 56,
+      "totalFare": 1170
+    },
+    "availability": [
+      {
+        "date": "16-11-2026",
+        "status": "AVAILABLE",
+        "availabilityText": "AVL 26",
+        "rawStatus": "AVAILABLE-0026",
+        "prediction": "Available",
+        "predictionPercentage": 100,
+        "canBook": true
+      }
+    ]
+  }
+}

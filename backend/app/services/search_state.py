@@ -6,8 +6,9 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import date
 
-from app.domain.enums import IncompleteReason
+from app.domain.enums import IncompleteReason, Quota
 from app.domain.models import SegmentObservation, TrainRoute, TrainSummary
+from app.domain.quota_eligibility import QuotaEligibility
 from app.domain.route import JourneyRoute, RouteAnalysis
 from app.optimization.planner import QueryPlanner
 from app.optimization.policy import SearchFilters
@@ -24,6 +25,8 @@ class JourneyRequest:
     max_segments: int
     train_numbers: tuple[str, ...] | None
     notes: tuple[str, ...] = ()
+    #: Canonical order (GN, TQ). Each quota is a separate search space.
+    quotas: tuple[Quota, ...] = (Quota.GENERAL,)
 
 
 @dataclass
@@ -39,6 +42,8 @@ class TrainContext:
     issues: list[str] = field(default_factory=list)
     #: travel class -> state for classes that were not turned into planner combinations
     class_states: dict[str, str] = field(default_factory=dict)
+    #: (travel class, quota) -> booking-window eligibility, for every offered pair evaluated
+    eligibility: dict[tuple[str, Quota], QuotaEligibility] = field(default_factory=dict)
 
     @property
     def name(self) -> str | None:
@@ -52,6 +57,7 @@ class ComboContext:
     combo_id: int
     train: TrainContext
     travel_class: str
+    quota: Quota = Quota.GENERAL
     observations: dict[tuple[int, int], SegmentObservation] = field(default_factory=dict)
     cached_observation_ids: set[uuid.UUID] = field(default_factory=set)
 
@@ -64,6 +70,8 @@ class SearchStats:
     segments_unknown: int = 0
     segments_failed: int = 0
     route_failures: int = 0
+    #: Offered train x class x quota combinations deliberately not queried (eligibility)
+    combinations_not_queried: int = 0
     deadline_hit: bool = False
     stop_reason: IncompleteReason | None = None
     hard_stop: bool = False

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from datetime import time
+
 import pytest
 from pydantic import ValidationError
 
 from app.core.config import Settings
-from app.domain.enums import AvailabilityDatePolicy
+from app.domain.enums import AvailabilityDatePolicy, Quota
 from tests.conftest import make_settings
 
 
@@ -112,3 +114,35 @@ def test_migration_url_derived_from_admin_role() -> None:
 def test_migration_url_falls_back_to_runtime_url() -> None:
     settings = make_settings(database_url="postgresql://app:apppw@db:5432/rr")
     assert settings.effective_migration_database_url == "postgresql+psycopg://app:apppw@db:5432/rr"
+
+
+# --- Reservation quotas ---------------------------------------------------------------------------
+def test_quota_defaults_match_live_railkit_verification() -> None:
+    settings = make_settings()
+    assert settings.railkit_supported_quotas == ["GN", "TQ"]
+    tatkal = settings.opening_rule(Quota.TATKAL)
+    assert tatkal is not None
+    assert (tatkal.days_before, tatkal.ac_opens_at, tatkal.non_ac_opens_at) == (
+        1,
+        time(10, 0),
+        time(11, 0),
+    )
+    assert settings.opening_rule(Quota.GENERAL) is None
+
+
+def test_quota_settings_are_parsed_and_validated() -> None:
+    settings = make_settings(
+        railkit_supported_quotas="tq, GN",
+        tatkal_ac_opening_time="10:30",
+        tatkal_opening_days_before=2,
+    )
+    assert settings.railkit_supported_quotas == ["GN", "TQ"]  # canonical order
+    tatkal = settings.opening_rule(Quota.TATKAL)
+    assert tatkal is not None
+    assert (tatkal.days_before, tatkal.ac_opens_at) == (2, time(10, 30))
+    removed = {"railkit_supported_quotas": "GN,PT"}  # Premium Tatkal is no longer a quota
+    for bad in (removed, {"railkit_supported_quotas": "GN,LD"}, {"railkit_supported_quotas": "TQ"}):
+        with pytest.raises(ValidationError):
+            make_settings(**bad)
+    with pytest.raises(ValidationError, match="IST wall-clock"):
+        make_settings(tatkal_ac_opening_time="10:00+05:30")

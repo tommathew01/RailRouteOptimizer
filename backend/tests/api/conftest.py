@@ -28,10 +28,14 @@ async def api_client(
     settings: Settings | None = None,
     *,
     provider: RailwayProvider | None = None,
+    clock: FrozenClock | None = None,
     **container_overrides: Any,
 ) -> AsyncIterator[tuple[httpx.AsyncClient, FastAPI]]:
     factory = functools.partial(
-        AppContainer.build, clock=FrozenClock(NOW), provider=provider, **container_overrides
+        AppContainer.build,
+        clock=clock or FrozenClock(NOW),
+        provider=provider,
+        **container_overrides,
     )
     application = create_app(settings or make_settings(), container_factory=factory)
     async with application.router.lifespan_context(application):

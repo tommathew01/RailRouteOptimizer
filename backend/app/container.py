@@ -22,6 +22,7 @@ from app.services.availability import AvailabilityService
 from app.services.executor import InlineExecutor, InProcessExecutor, SearchExecutor
 from app.services.journey_search import JourneySearchService
 from app.services.quota import ProviderQuotaGuard
+from app.services.quota_eligibility import QuotaEligibilityService
 from app.services.stations import StationService
 from app.services.trains import TrainService
 from app.services.usage import CompositeObserver, ProviderUsageRecorder
@@ -44,6 +45,7 @@ class AppContainer:
     stations: StationService
     trains: TrainService
     availability: AvailabilityService
+    eligibility: QuotaEligibilityService
     journeys: JourneySearchService
     executor: SearchExecutor
     rate_limiter: ApiRateLimiter
@@ -147,11 +149,15 @@ class AppContainer:
             if settings.search_execution_mode is ExecutionMode.SYNC
             else InProcessExecutor(max_concurrent=settings.max_concurrent_searches)
         )
+        eligibility = QuotaEligibilityService(
+            settings=settings, clock=clock, supported_quotas=provider.supported_quotas
+        )
         journeys = JourneySearchService(
             settings=settings,
             clock=clock,
             trains=trains,
             availability=availability,
+            eligibility=eligibility,
             persistence=persistence,
             executor=executor,
             provider_name=provider.name,
@@ -200,6 +206,7 @@ class AppContainer:
             stations=stations,
             trains=trains,
             availability=availability,
+            eligibility=eligibility,
             journeys=journeys,
             executor=executor,
             rate_limiter=rate_limiter,

@@ -5,6 +5,7 @@ from datetime import date
 import pytest
 
 from app.domain.enums import AvailabilityStatus as S
+from app.domain.enums import Quota
 from app.domain.models import AvailabilityQuery
 from app.providers.base import RailwayProvider
 from app.providers.errors import ProviderNotFoundError, ProviderRejectedError, ProviderTimeoutError
@@ -92,3 +93,65 @@ async def test_station_search_prefers_exact_code_then_prefix() -> None:
     results = await MockRailwayProvider().search_stations("tir")
     assert results[0].code == "TIR"
     assert all("tir" in s.name.lower() or s.code.startswith("TIR") for s in results)
+
+
+# --- Quotas ---------------------------------------------------------------------------------------
+def qq(train: str, src: str, dst: str, quota: Quota, cls: str = "3A") -> AvailabilityQuery:
+    return AvailabilityQuery(train, src, dst, DAY, cls, quota)
+
+
+async def test_each_quota_is_answered_separately_and_echoed() -> None:
+    provider = MockRailwayProvider()
+    assert provider.supported_quotas == frozenset(Quota)
+    answers = {
+        quota: await provider.get_availability(qq("90601", "TIR", "TVC", quota)) for quota in Quota
+    }
+    assert answers[Quota.GENERAL].raw_status == "GNWL42/WL27"  # demo override (General only)
+    assert answers[Quota.TATKAL].raw_status != answers[Quota.GENERAL].raw_status
+    for quota, record in answers.items():
+        assert record.raw_payload is not None
+        assert record.raw_payload["quota"] == quota.value
+    general, tatkal = answers[Quota.GENERAL].fare, answers[Quota.TATKAL].fare
+    assert general is not None
+    assert tatkal is not None
+    assert tatkal.amount > general.amount  # simulated Tatkal premium
+
+
+async def test_tatkal_waitlists_are_tatkal_waitlists() -> None:
+    provider = MockRailwayProvider(overrides={})
+    route = [s.code for s in demo_trains()["90601"].stops]
+    seen: set[S] = set()
+    for i in range(len(route) - 1):
+        for j in range(i + 1, len(route)):
+            record = await provider.get_availability(qq("90601", route[i], route[j], Quota.TATKAL))
+            seen.add(record.status)
+            if record.status is S.WAITLIST:
+                assert record.waitlist_type == "TQWL"
+    assert S.WAITLIST in seen
+
+
+async def test_unsupported_quota_is_rejected_like_railkit() -> None:
+    provider = MockRailwayProvider(quotas=(Quota.GENERAL,))
+    with pytest.raises(ProviderRejectedError, match="Quota not allowed"):
+        await provider.get_availability(qq("90601", "TIR", "TVC", Quota.TATKAL))
+
+
+async def test_quota_specific_overrides_and_failures() -> None:
+    provider = MockRailwayProvider(
+        overrides={
+            ("90601", "TIR", "ERS", "3A", "TQ"): ("TQWL3/WL2", "70% Chance", 70),
+            ("90601", "TIR", "ERS", "3A"): ("AVAILABLE-0007", None, None),
+        },
+        failures={
+            ("90601", "ERS", "TVC", "3A", "TQ"): ProviderTimeoutError(
+                "x", provider="MOCK", endpoint="seat_availability"
+            )
+        },
+    )
+    record = await provider.get_availability(qq("90601", "TIR", "ERS", Quota.TATKAL))
+    assert (record.status, record.waitlist_type) == (S.WAITLIST, "TQWL")
+    general = await provider.get_availability(qq("90601", "TIR", "ERS", Quota.GENERAL))
+    assert general.raw_status == "AVAILABLE-0007"  # the General override is untouched
+    with pytest.raises(ProviderTimeoutError):
+        await provider.get_availability(qq("90601", "ERS", "TVC", Quota.TATKAL))
+    assert (await provider.get_availability(qq("90601", "ERS", "TVC", Quota.GENERAL))).status

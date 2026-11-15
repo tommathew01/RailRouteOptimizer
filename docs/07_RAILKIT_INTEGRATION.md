@@ -109,7 +109,9 @@ Before declaring RailKit integration complete, test with a real account:
 4. Seat availability for a direct segment.
 5. Seat availability for intermediate station pairs on same train.
 6. Multiple supported classes.
-7. General quota `GN`.
+7. General quota `GN`; Tatkal `TQ` (verified 2026-11-15: accepted, echoed, Tatkal fare, only the
+   requested date returned). Premium Tatkal `PT` is
+   rejected by RailKit (`400 Quota not allowed`, 2026-11-15) and is not offered. See docs/09 Q16.
 8. Current status variants: CNF, AVL, RAC, WL, unavailable.
 9. Prediction field presence and meaning.
 10. Whether prediction is for the requested date/status and how it is refreshed.
@@ -124,3 +126,15 @@ Do not fabricate live responses. Save sanitized examples as fixtures after succe
 ## 10. Provider abstraction test
 
 Create a `MockRailwayProvider` implementing the same interface. All optimizer tests must use mock/domain data and run without RailKit credentials. This is mandatory for CI and reproducible development.
+
+## 10. Reservation quotas (added 2026-11-15)
+
+- The adapter sends the quota code unchanged in the seat-availability path
+  (`/api/v1/seats/{train}/{from}/{to}/{DD-MM-YYYY}/{class}/{quota}`) and validates the echoed
+  `data.train.quota` (a TQ payload is rejected for a GN query and vice versa).
+- `RailKitProvider.supported_quotas` comes from `RAILKIT_SUPPORTED_QUOTAS` (default `GN,TQ`). A query
+  for any other quota raises `PROVIDER_REJECTED` **without an HTTP request**; the search service never
+  gets that far, because the eligibility service marks it `PROVIDER_UNSUPPORTED` first.
+- Opening times are not provided by RailKit; they are RailRoute configuration (`TATKAL_*`) applied to the train's origin date from `trainInfo`/`route[]`.
+- Live evidence: `backend/tests/fixtures/railkit/live/2026-11-15/`, pinned by
+  `tests/unit/providers/test_railkit_live_fixtures.py`.

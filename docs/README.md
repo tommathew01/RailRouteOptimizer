@@ -36,7 +36,7 @@ was supplied directly to the implementing agent).
 | Client platform | Responsive web/PWA first; API and UI architecture mobile-ready |
 | Train scope | One train for every segment in a recommendation |
 | Classes | User selects one or more supported classes |
-| Quota | General (`GN`) only |
+| Quota | General (`GN`) by default; Tatkal (`TQ`) selectable, never mixed, queried only once its booking window opens (docs/08 D-20). Premium Tatkal (`PT`) is not offered: RailKit rejects it (docs/08 D-26) |
 | Maximum segments | 4 tickets per recommendation |
 | Passenger count | Not collected; each segment is checked as a single-ticket availability query |
 | Availability | Current provider status is mandatory |

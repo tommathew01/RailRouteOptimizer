@@ -3,7 +3,8 @@
 Base path: `/api/v1`  
 Content type: `application/json`  
 Date input: ISO `YYYY-MM-DD` at our API boundary. Convert to RailKit's required format in the adapter after contract verification.  
-Quota: server-enforced `GN`.
+Quota: General (`GN`) by default; Tatkal (`TQ`) on request, each searched
+separately and only once its booking window is open (§9, docs/08 D-20…D-25).
 
 ## 1. Station search
 
@@ -90,7 +91,9 @@ Request:
 }
 ```
 
-Quota is not accepted from the client in MVP; backend uses `GN`.
+Optional `"quota": "GN" | "TQ"` (default and `null` → `GN`). TQ is only sent to the provider
+when the booking window is open; otherwise the response has `queried: false`, `availability: null` and an
+`eligibility` block (§9). An unknown code is a 400.
 
 Response:
 ```json
@@ -101,6 +104,9 @@ Response:
   "journey_date": "2026-11-20",
   "travel_class": "3A",
   "quota": "GN",
+  "quota_label": "General",
+  "queried": true,
+  "eligibility": { "quota": "GN", "state": "NOT_APPLICABLE", "queryable": true, "...": "§9" },
   "availability": {
     "status": "WAITLIST",
     "availability_text": "WL 5",
@@ -138,11 +144,14 @@ Request:
     "allow_rac": true,
     "allow_waitlist": false
   },
-  "max_segments": 4
+  "max_segments": 4,
+  "quotas": ["GN", "TQ"]
 }
 ```
 
-Server policy clamps `max_segments` to 4 and enforces GN. Passenger count is not accepted. Provider request budget is server-side configuration.
+Server policy clamps `max_segments` to 4. `quotas` defaults to `["GN"]` and is returned in canonical
+order (GN, TQ); the deprecated single `quota` field is ignored with a note. Passenger count is not
+accepted. Provider request budget is server-side configuration and is shared by all quotas.
 
 For asynchronous execution:
 `202 Accepted`
@@ -175,6 +184,7 @@ For completed search:
       "train_name": "Example Express",
       "travel_class": "3A",
       "quota": "GN",
+      "quota_label": "General",
       "segment_count": 3,
       "status_tier": 0,
       "segments": [
@@ -237,3 +247,47 @@ Never return RailKit API key, provider auth headers, raw exception trace or secr
 - Generate OpenAPI.
 - Add contract tests.
 - Do not expose RailKit response JSON as the public API contract.
+
+## 9. Reservation quotas (GN, TQ)
+
+All changes are additive; a General-only client sees the same behaviour as before.
+
+| Where | Field | Meaning |
+|---|---|---|
+| `POST /journeys/optimize` | `quotas: ["GN" \| "TQ"]` (1–2, default `["GN"]`; any other code, including `PT`, is a 400) | Each quota is a separate search space; one recommendation never mixes quotas. If **none** of the selected quotas is supported by the provider → `422 QUOTA_NOT_SUPPORTED` before any provider call. |
+| Search result | `request.quotas` (`request.quota` = first, deprecated) | Echo. |
+| Search result | `recommendations[].quota`, `quota_label` | The quota of every segment of that recommendation. |
+| Search result | `trains[].classes[]` → one row per class × quota with `quota`, `queried`, `eligibility` | New states `NOT_YET_OPEN`, `QUOTA_NOT_SUPPORTED`, `NOT_QUERIED`. Never `NOT_AVAILABLE`. |
+| Search result | `quotas[]` (`QuotaSummary`) | `provider_supported`, `queried`, `combinations_eligible`, `combinations_not_queried`, `next_opening_at`, `not_queried[]` groups with a message, `recommendations`. |
+| Search result | `coverage.combinations_not_queried` | Offered train × class × quota combinations deliberately not queried. |
+| Search result | `search_completeness = PARTIAL_QUOTA_NOT_QUERIED`, `incomplete_reason = QUOTA_NOT_QUERIED` | Some selected quota was not checked (budget, timeout and provider reasons take precedence). With no recommendations: `NO_PATH_FOUND_PARTIAL`. |
+| `POST /availability/check` | `quota`, response `quota_label`, `queried`, `eligibility`; `availability`/`checked_at` null when not queried | Single segment, one quota. |
+| `GET /meta` | `quotas[]` (`code`, `label`, `default`, `provider_supported`, `opening_rule`, `note`), `supported_classes[].category` (`AC`/`NON_AC`/null) | For rendering the selector and the opening rule. `quota.editable` is now `true`. |
+
+`eligibility` (`QuotaEligibility`):
+
+```json
+{
+  "quota": "TQ",
+  "state": "NOT_YET_OPEN",
+  "queryable": false,
+  "class_category": "AC",
+  "train_origin_date": "2026-11-20",
+  "opens_at": "2026-11-19T10:00:00+05:30",
+  "message": "Tatkal (TQ) booking for class 3A opens on 19 Nov 2026 at 10:00 IST (the train leaves its origin station on 20 Nov 2026). Not checked yet — search again after it opens."
+}
+```
+
+| `state` | Queried? | Meaning |
+|---|---|---|
+| `NOT_APPLICABLE` | yes | No booking window (General). |
+| `NOT_YET_OPEN` | no | Opens on a later IST calendar day. |
+| `OPENS_TODAY` | no | Opens later today. |
+| `OPEN` | yes | Opened; the train has not reached its origin date. |
+| `OPENING_PASSED` | yes | Opening day is over; booking may stay open until charting, so the provider is asked. |
+| `JOURNEY_DATE_PASSED` | no | Boarding date before today (IST). |
+| `CLASS_CATEGORY_UNKNOWN` | no | Class has no AC/non-AC mapping (`VC`, `CH`, `HS`). |
+| `UNDETERMINED` | no | Origin or journey date missing/inconsistent. |
+| `PROVIDER_UNSUPPORTED` | no | The provider does not support this quota (e.g. Tatkal disabled via `RAILKIT_SUPPORTED_QUOTAS`). |
+
+Not-queried quotas are never re-queried automatically; the client searches again after `opens_at`.

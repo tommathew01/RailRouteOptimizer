@@ -136,7 +136,9 @@ async def test_policy_clamps_and_notes() -> None:
         ).json()
     assert body["request"]["max_segments"] == 4
     assert any("reduced to the server limit" in w for w in body["warnings"])
-    assert any("quota was ignored" in w for w in body["warnings"])
+    # The deprecated single 'quota' field never switches quotas; 'quotas' does.
+    assert body["request"]["quotas"] == ["GN"]
+    assert any("deprecated 'quota' field was ignored" in w for w in body["warnings"])
 
 
 @pytest.mark.parametrize(

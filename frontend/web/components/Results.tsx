@@ -5,6 +5,7 @@ import { useState } from "react";
 import { AvailabilityBadge, Notice, PredictionIndicator, StaleIndicator, toneClass } from "@/components/StatusBits";
 import type { JourneySearch, Recommendation, Segment } from "@/lib/api/schemas";
 import { formatDayMonth, formatMoney, formatTime } from "@/lib/format";
+import { quotaSummaryText } from "@/lib/quotas";
 import { COMPLETENESS_TEXT, TIER_TONE } from "@/lib/status";
 
 export function SearchProgress({ search }: { search: JourneySearch }) {
@@ -44,7 +45,11 @@ export function CoverageNotice({ search }: { search: JourneySearch }) {
     <Notice tone={meta.tone} title={meta.title}>
       <p>
         Checked {c.segments_checked} segment(s) across {c.trains_evaluated} train(s) and{" "}
-        {c.combinations_evaluated} train × class combination(s): {c.availability_requests_made} of{" "}
+        {c.combinations_evaluated} train × class × quota combination(s)
+        {c.combinations_not_queried
+          ? ` (${c.combinations_not_queried} more not checked: quota not open or not supported)`
+          : ""}
+        : {c.availability_requests_made} of{" "}
         {c.request_budget} provider checks used, {c.cache_hits} from cache
         {c.segments_failed ? `, ${c.segments_failed} failed` : ""}
         {c.segments_unknown ? `, ${c.segments_unknown} unclear` : ""}.
@@ -125,7 +130,8 @@ export function RecommendationCard({
             {rec.train_name ?? "Train"} <span className="font-mono text-sm text-muted">#{rec.train_number}</span>
           </h3>
           <p className="text-sm text-muted">
-            {rec.travel_class_label} ({rec.travel_class}) · General quota · {tickets}
+            {rec.travel_class_label} ({rec.travel_class}) · {rec.quota_label} ({rec.quota}) quota ·{" "}
+            {tickets}
           </p>
         </div>
         <div className="text-right">
@@ -183,6 +189,42 @@ export function RecommendationCard({
         ) : null}
       </div>
     </article>
+  );
+}
+
+/**
+ * Per-quota status. A quota that was not queried is shown as "not checked" with the opening time
+ * the backend computed — never as unavailable.
+ */
+export function QuotaStatus({ search }: { search: JourneySearch }) {
+  const summaries = search.quotas;
+  const interesting = summaries.some(
+    (q) => q.quota !== "GN" || !q.provider_supported || q.combinations_not_queried > 0,
+  );
+  if (!summaries.length || !interesting) return null;
+  return (
+    <section aria-labelledby="quota-status-title" className="card">
+      <h2 id="quota-status-title" className="font-semibold">
+        Quotas
+      </h2>
+      <ul className="mt-2 space-y-1 text-sm">
+        {summaries.map((summary) => (
+          <li key={summary.quota}>
+            <span className="font-semibold">
+              {summary.quota_label} ({summary.quota})
+            </span>
+            : {quotaSummaryText(summary)}
+            {summary.queried ? ` · ${summary.recommendations} combination(s)` : ""}
+          </li>
+        ))}
+      </ul>
+      {summaries.some((q) => q.combinations_not_queried > 0 && q.provider_supported) ? (
+        <p className="mt-2 text-xs text-muted">
+          Quotas that are not open yet are not re-checked automatically. Use “Check again” after
+          the booking window opens.
+        </p>
+      ) : null}
+    </section>
   );
 }
 

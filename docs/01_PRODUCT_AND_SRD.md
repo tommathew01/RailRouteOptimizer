@@ -51,7 +51,8 @@ A passenger who has a preferred train and wants to find alternative segment comb
 2. Selects source and destination stations.
 3. Selects journey date.
 4. Selects one or more classes.
-5. Quota is fixed to General (`GN`) in MVP.
+5. Quota: General (`GN`) by default; Tatkal (`TQ`) is selectable and
+   searched separately once its booking window opens (added 2026-11-15, docs/08 D-20).
 6. User submits search.
 7. Backend discovers eligible trains and obtains route data.
 8. Availability planner queries candidate segments within a configurable request budget.
@@ -65,12 +66,12 @@ A passenger who has a preferred train and wants to find alternative segment comb
 |---|---|---|
 | FR-001 | Search stations by name/code and return disambiguated station codes | Must |
 | FR-002 | Accept source, destination, journey date and one or more classes | Must |
-| FR-003 | Enforce General quota (`GN`) server-side | Must |
+| FR-003 | Let the user select quotas (GN default, TQ); validate and order them server-side; never substitute an unsupported quota | Must |
 | FR-004 | Discover trains between source and destination for requested date | Must |
 | FR-005 | Retrieve complete ordered train route and stop metadata | Must |
 | FR-006 | Validate source and destination occur in correct order in train route | Must |
 | FR-007 | Generate candidate forward-only segments between route stops | Must |
-| FR-008 | Query RailKit availability for a segment, train, date, class and GN quota | Must |
+| FR-008 | Query RailKit availability for a segment, train, date, class and quota; query TQ only after its booking window (origin date − 1 day, 10:00 AC / 11:00 non-AC IST) opens | Must |
 | FR-009 | Normalize provider statuses while preserving raw status and payload | Must |
 | FR-010 | Preserve RailKit prediction text and percentage as separate optional fields | Must |
 | FR-011 | Find valid source-to-destination paths of at most four segments | Must |
