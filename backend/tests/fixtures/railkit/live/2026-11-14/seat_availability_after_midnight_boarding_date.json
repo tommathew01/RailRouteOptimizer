@@ -1,0 +1,58 @@
+{
+  "train": {
+    "trainNo": "12248",
+    "trainName": "BANDRA YUVA EXP",
+    "from": "RTM",
+    "to": "BDTS",
+    "fromStationName": "Ratlam Junction",
+    "toStationName": "Mumbai Bandra Terminus",
+    "distance": 642,
+    "travelClass": "CC",
+    "quota": "GN"
+  },
+  "fare": {
+    "baseFare": 529,
+    "reservationCharge": 40,
+    "superfastCharge": 45,
+    "serviceTax": 31,
+    "totalFare": 645
+  },
+  "availability": [
+    {
+      "date": "29-11-2026",
+      "status": "WAITLIST",
+      "availabilityText": "WL 3",
+      "rawStatus": "RLWL3/WL3",
+      "prediction": "89% Chance",
+      "predictionPercentage": 89,
+      "canBook": true
+    },
+    {
+      "date": "6-12-2026",
+      "status": "WAITLIST",
+      "availabilityText": "WL 1",
+      "rawStatus": "RLWL2/WL1",
+      "prediction": "91% Chance",
+      "predictionPercentage": 91,
+      "canBook": true
+    },
+    {
+      "date": "13-12-2026",
+      "status": "WAITLIST",
+      "availabilityText": "WL 2",
+      "rawStatus": "RLWL2/WL2",
+      "prediction": "90% Chance",
+      "predictionPercentage": 90,
+      "canBook": true
+    },
+    {
+      "date": "20-12-2026",
+      "status": "AVAILABLE",
+      "availabilityText": "AVL 19",
+      "rawStatus": "AVAILABLE-0019",
+      "prediction": "Available",
+      "predictionPercentage": 100,
+      "canBook": true
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "train": {
+    "trainNo": "12248",
+    "trainName": "BANDRA YUVA EXP",
+    "from": "NZM",
+    "to": "BDTS",
+    "fromStationName": "Delhi Hazrat Nizamuddin",
+    "toStationName": "Mumbai Bandra Terminus",
+    "distance": 1366,
+    "travelClass": "CC",
+    "quota": "GN"
+  },
+  "fare": {
+    "baseFare": 867,
+    "reservationCharge": 40,
+    "superfastCharge": 45,
+    "serviceTax": 48,
+    "totalFare": 1000
+  },
+  "availability": [
+    {
+      "date": "28-11-2026",
+      "status": "WAITLIST",
+      "availabilityText": "WL 60",
+      "rawStatus": "GNWL86/WL60",
+      "prediction": "82% Chance",
+      "predictionPercentage": 82,
+      "canBook": true
+    },
+    {
+      "date": "5-12-2026",
+      "status": "WAITLIST",
+      "availabilityText": "WL 50",
+      "rawStatus": "GNWL59/WL50",
+      "prediction": "88% Chance",
+      "predictionPercentage": 88,
+      "canBook": true
+    },
+    {
+      "date": "12-12-2026",
+      "status": "WAITLIST",
+      "availabilityText": "WL 40",
+      "rawStatus": "GNWL41/WL40",
+      "prediction": "90% Chance",
+      "predictionPercentage": 90,
+      "canBook": true
+    },
+    {
+      "date": "19-12-2026",
+      "status": "WAITLIST",
+      "availabilityText": "WL 24",
+      "rawStatus": "GNWL26/WL24",
+      "prediction": "91% Chance",
+      "predictionPercentage": 91,
+      "canBook": true
+    }
+  ]
+}

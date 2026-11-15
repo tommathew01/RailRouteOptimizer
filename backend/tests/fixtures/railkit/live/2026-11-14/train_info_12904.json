@@ -1,0 +1,716 @@
+{
+  "trainInfo": {
+    "train_no": "12904",
+    "train_name": "GOLDEN TEMPLE M",
+    "from_stn_name": "AMRITSAR",
+    "from_stn_code": "ASR",
+    "to_stn_name": "BANDRA TERMINUS",
+    "to_stn_code": "BDTS",
+    "from_time": "18:55",
+    "to_time": "23:55",
+    "travel_time": "29:00 hrs",
+    "running_days": "1111111",
+    "type": "SUPERFAST",
+    "train_name_hindi": "गोल्डन टेम्पल",
+    "type_code": "SUF",
+    "subtype": "SUPERFAST",
+    "owning_railway": "WR",
+    "gauge": "BG",
+    "total_distance": 1880,
+    "destination_day": 2,
+    "classes": [
+      "1A",
+      "2A",
+      "3A",
+      "SL",
+      "GEN",
+      "PWD"
+    ],
+    "prs_classes": [
+      "1A",
+      "2A",
+      "3A",
+      "SL"
+    ],
+    "pantry_type": "PC"
+  },
+  "route": [
+    {
+      "stnCode": "ASR",
+      "stnName": "AMRITSAR",
+      "arrival": "--",
+      "departure": "18:55",
+      "halt": "0 min",
+      "haltMinutes": 0,
+      "distance": "0",
+      "day": "1",
+      "platform": 1,
+      "coordinates": {
+        "latitude": 31.631752,
+        "longitude": 74.858265
+      },
+      "stationNameHindi": "अमृतसर जं.",
+      "division": "FZR",
+      "zone": "NR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "BEAS",
+      "stnName": "BEAS",
+      "arrival": "19:23",
+      "departure": "19:25",
+      "halt": "2 min",
+      "haltMinutes": 2,
+      "distance": "42",
+      "day": "1",
+      "platform": 2,
+      "coordinates": {
+        "latitude": 31.5198,
+        "longitude": 75.2912
+      },
+      "stationNameHindi": "ब्यास",
+      "division": "FZR",
+      "zone": "NR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "JUC",
+      "stnName": "JALANDHAR CITY",
+      "arrival": "20:00",
+      "departure": "20:05",
+      "halt": "5 min",
+      "haltMinutes": 5,
+      "distance": "79",
+      "day": "1",
+      "platform": 2,
+      "coordinates": {
+        "latitude": 31.3314,
+        "longitude": 75.5912
+      },
+      "stationNameHindi": "जलंधर शहर",
+      "division": "FZR",
+      "zone": "NR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "LDH",
+      "stnName": "LUDHIANA JN",
+      "arrival": "21:00",
+      "departure": "21:10",
+      "halt": "10 min",
+      "haltMinutes": 10,
+      "distance": "135",
+      "day": "1",
+      "platform": 1,
+      "coordinates": {
+        "latitude": 30.912387,
+        "longitude": 75.847893
+      },
+      "stationNameHindi": "लुधियाना जं",
+      "division": "FZR",
+      "zone": "NR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "UMB",
+      "stnName": "AMBALA CANTT",
+      "arrival": "22:50",
+      "departure": "22:55",
+      "halt": "5 min",
+      "haltMinutes": 5,
+      "distance": "249",
+      "day": "1",
+      "platform": 3,
+      "coordinates": {
+        "latitude": 30.338658,
+        "longitude": 76.826706
+      },
+      "stationNameHindi": "अंबाला कैंट जं",
+      "division": "UMB",
+      "zone": "NR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "YJUD",
+      "stnName": "YAMUNANAGAR JAGADHRI",
+      "arrival": "23:33",
+      "departure": "23:35",
+      "halt": "2 min",
+      "haltMinutes": 2,
+      "distance": "300",
+      "day": "1",
+      "platform": 2,
+      "coordinates": {
+        "latitude": 30.117171,
+        "longitude": 77.287555
+      },
+      "stationNameHindi": "यमुनानगर जगाधरी",
+      "division": "UMB",
+      "zone": "NR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "SRE",
+      "stnName": "SAHARANPUR JN",
+      "arrival": "00:15",
+      "departure": "00:20",
+      "halt": "5 min",
+      "haltMinutes": 5,
+      "distance": "330",
+      "day": "2",
+      "platform": 2,
+      "coordinates": {
+        "latitude": 29.960809,
+        "longitude": 77.542019
+      },
+      "stationNameHindi": "सहारनपुर जं",
+      "division": "UMB",
+      "zone": "NR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "MOZ",
+      "stnName": "MUZAFFARNAGAR",
+      "arrival": "01:04",
+      "departure": "01:06",
+      "halt": "2 min",
+      "haltMinutes": 2,
+      "distance": "388",
+      "day": "2",
+      "platform": 2,
+      "coordinates": {
+        "latitude": 29.4689,
+        "longitude": 77.708
+      },
+      "stationNameHindi": "मुजफ्फर नगर",
+      "division": "DLI",
+      "zone": "NR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "SKF",
+      "stnName": "SAKHOTI TANDA",
+      "arrival": "01:27",
+      "departure": "01:29",
+      "halt": "2 min",
+      "haltMinutes": 2,
+      "distance": "420",
+      "day": "2",
+      "platform": 1,
+      "coordinates": {
+        "latitude": 29.1927,
+        "longitude": 77.7181
+      },
+      "stationNameHindi": "सकोती टांडा",
+      "division": "DLI",
+      "zone": "NR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "MUT",
+      "stnName": "MEERUT CANT",
+      "arrival": "01:45",
+      "departure": "01:47",
+      "halt": "2 min",
+      "haltMinutes": 2,
+      "distance": "440",
+      "day": "2",
+      "platform": 2,
+      "coordinates": {
+        "latitude": 29.015947,
+        "longitude": 77.686887
+      },
+      "stationNameHindi": "मेरठ कैंट",
+      "division": "DLI",
+      "zone": "NR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "MTC",
+      "stnName": "MEERUT CITY",
+      "arrival": "01:55",
+      "departure": "02:00",
+      "halt": "5 min",
+      "haltMinutes": 5,
+      "distance": "444",
+      "day": "2",
+      "platform": 1,
+      "coordinates": {
+        "latitude": 28.9773,
+        "longitude": 77.6748
+      },
+      "stationNameHindi": "मेरठ शहर",
+      "division": "DLI",
+      "zone": "NR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "GZB",
+      "stnName": "GHAZIABAD",
+      "arrival": "02:50",
+      "departure": "02:52",
+      "halt": "2 min",
+      "haltMinutes": 2,
+      "distance": "491",
+      "day": "2",
+      "platform": 4,
+      "coordinates": {
+        "latitude": 28.650072,
+        "longitude": 77.431469
+      },
+      "stationNameHindi": "गाजियाबाद",
+      "division": "DLI",
+      "zone": "NR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "NZM",
+      "stnName": "HAZRAT NIZAMUDDIN JN",
+      "arrival": "03:45",
+      "departure": "04:00",
+      "halt": "15 min",
+      "haltMinutes": 15,
+      "distance": "519",
+      "day": "2",
+      "platform": 2,
+      "coordinates": {
+        "latitude": 28.58731,
+        "longitude": 77.254229
+      },
+      "stationNameHindi": "हजरत निजामुद्दीन",
+      "division": "DLI",
+      "zone": "NR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "FDB",
+      "stnName": "FARIDABAD",
+      "arrival": "04:16",
+      "departure": "04:18",
+      "halt": "2 min",
+      "haltMinutes": 2,
+      "distance": "540",
+      "day": "2",
+      "platform": 3,
+      "coordinates": {
+        "latitude": 28.411483,
+        "longitude": 77.307358
+      },
+      "stationNameHindi": "फरीदाबाद",
+      "division": "DLI",
+      "zone": "NR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "MTJ",
+      "stnName": "MATHURA JN",
+      "arrival": "05:45",
+      "departure": "05:50",
+      "halt": "5 min",
+      "haltMinutes": 5,
+      "distance": "652",
+      "day": "2",
+      "platform": 3,
+      "coordinates": {
+        "latitude": 27.480025,
+        "longitude": 77.672997
+      },
+      "stationNameHindi": "मथुरा जं",
+      "division": "AGRA",
+      "zone": "NCR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "BTE",
+      "stnName": "BHARATPUR JN",
+      "arrival": "06:13",
+      "departure": "06:15",
+      "halt": "2 min",
+      "haltMinutes": 2,
+      "distance": "686",
+      "day": "2",
+      "platform": 3,
+      "coordinates": {
+        "latitude": 27.236697,
+        "longitude": 77.488203
+      },
+      "stationNameHindi": "भरतपुर जं",
+      "division": "KOTA",
+      "zone": "WCR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "BXN",
+      "stnName": "BAYANA JN",
+      "arrival": "06:40",
+      "departure": "06:42",
+      "halt": "2 min",
+      "haltMinutes": 2,
+      "distance": "728",
+      "day": "2",
+      "platform": 2,
+      "coordinates": {
+        "latitude": 26.916024,
+        "longitude": 77.296801
+      },
+      "stationNameHindi": "बयाना जं",
+      "division": "KOTA",
+      "zone": "WCR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "HAN",
+      "stnName": "HINDAUN CITY",
+      "arrival": "07:03",
+      "departure": "07:05",
+      "halt": "2 min",
+      "haltMinutes": 2,
+      "distance": "760",
+      "day": "2",
+      "platform": 1,
+      "coordinates": {
+        "latitude": 26.7558,
+        "longitude": 77.0313
+      },
+      "stationNameHindi": "हिंडौन सिटी",
+      "division": "KOTA",
+      "zone": "WCR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "SMVJ",
+      "stnName": "SHRI MAHAVEERJI",
+      "arrival": "07:13",
+      "departure": "07:15",
+      "halt": "2 min",
+      "haltMinutes": 2,
+      "distance": "771",
+      "day": "2",
+      "platform": 1,
+      "coordinates": null,
+      "stationNameHindi": "श्री महावीरजी",
+      "division": "KOTA",
+      "zone": "WCR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "GGC",
+      "stnName": "GANGAPUR CITY JN",
+      "arrival": "07:45",
+      "departure": "07:50",
+      "halt": "5 min",
+      "haltMinutes": 5,
+      "distance": "805",
+      "day": "2",
+      "platform": 2,
+      "coordinates": {
+        "latitude": 26.468499,
+        "longitude": 76.727228
+      },
+      "stationNameHindi": "गंगापुर सिटी जं",
+      "division": "KOTA",
+      "zone": "WCR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "SWM",
+      "stnName": "SAWAI MADHOPUR JN",
+      "arrival": "08:30",
+      "departure": "08:35",
+      "halt": "5 min",
+      "haltMinutes": 5,
+      "distance": "868",
+      "day": "2",
+      "platform": 2,
+      "coordinates": {
+        "latitude": 26.018069,
+        "longitude": 76.35601
+      },
+      "stationNameHindi": "सवाई माधोपुर जं",
+      "division": "KOTA",
+      "zone": "WCR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "KOTA",
+      "stnName": "KOTA JN",
+      "arrival": "10:10",
+      "departure": "10:20",
+      "halt": "10 min",
+      "haltMinutes": 10,
+      "distance": "976",
+      "day": "2",
+      "platform": 2,
+      "coordinates": {
+        "latitude": 25.223733,
+        "longitude": 75.88068
+      },
+      "stationNameHindi": "कोटा जं",
+      "division": "KOTA",
+      "zone": "WCR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "RMA",
+      "stnName": "RAMGANJ MANDI JN",
+      "arrival": "11:18",
+      "departure": "11:20",
+      "halt": "2 min",
+      "haltMinutes": 2,
+      "distance": "1048",
+      "day": "2",
+      "platform": 1,
+      "coordinates": {
+        "latitude": 24.644326,
+        "longitude": 75.939131
+      },
+      "stationNameHindi": "रामगंज मंडी जं",
+      "division": "KOTA",
+      "zone": "WCR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "BWM",
+      "stnName": "BHAWANI MANDI",
+      "arrival": "11:38",
+      "departure": "11:40",
+      "halt": "2 min",
+      "haltMinutes": 2,
+      "distance": "1077",
+      "day": "2",
+      "platform": 1,
+      "coordinates": {
+        "latitude": 24.4197,
+        "longitude": 75.83
+      },
+      "stationNameHindi": "भवानी मंडी",
+      "division": "KOTA",
+      "zone": "WCR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "SGZ",
+      "stnName": "SHAMGARH",
+      "arrival": "12:03",
+      "departure": "12:05",
+      "halt": "2 min",
+      "haltMinutes": 2,
+      "distance": "1110",
+      "day": "2",
+      "platform": 1,
+      "coordinates": {
+        "latitude": 24.1912,
+        "longitude": 75.6429
+      },
+      "stationNameHindi": "शामगढ़",
+      "division": "KOTA",
+      "zone": "WCR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "NAD",
+      "stnName": "NAGDA JN",
+      "arrival": "13:38",
+      "departure": "13:40",
+      "halt": "2 min",
+      "haltMinutes": 2,
+      "distance": "1201",
+      "day": "2",
+      "platform": 2,
+      "coordinates": {
+        "latitude": 23.45616,
+        "longitude": 75.412731
+      },
+      "stationNameHindi": "नागदा जं",
+      "division": "RTM",
+      "zone": "WR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "RTM",
+      "stnName": "RATLAM JN",
+      "arrival": "14:15",
+      "departure": "14:25",
+      "halt": "10 min",
+      "haltMinutes": 10,
+      "distance": "1242",
+      "day": "2",
+      "platform": 4,
+      "coordinates": {
+        "latitude": 23.34068,
+        "longitude": 75.051126
+      },
+      "stationNameHindi": "रतलाम जं",
+      "division": "RTM",
+      "zone": "WR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "MGN",
+      "stnName": "MEGHNAGAR",
+      "arrival": "15:26",
+      "departure": "15:28",
+      "halt": "2 min",
+      "haltMinutes": 2,
+      "distance": "1323",
+      "day": "2",
+      "platform": 2,
+      "coordinates": {
+        "latitude": 22.9073,
+        "longitude": 74.5397
+      },
+      "stationNameHindi": "मेघनगर",
+      "division": "RTM",
+      "zone": "WR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "DHD",
+      "stnName": "DAHOD",
+      "arrival": "15:52",
+      "departure": "15:54",
+      "halt": "2 min",
+      "haltMinutes": 2,
+      "distance": "1356",
+      "day": "2",
+      "platform": 1,
+      "coordinates": {
+        "latitude": 22.843907,
+        "longitude": 74.253674
+      },
+      "stationNameHindi": "दाहोद",
+      "division": "RTM",
+      "zone": "WR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "GDA",
+      "stnName": "GODHRA JN",
+      "arrival": "17:05",
+      "departure": "17:07",
+      "halt": "2 min",
+      "haltMinutes": 2,
+      "distance": "1428",
+      "day": "2",
+      "platform": 1,
+      "coordinates": {
+        "latitude": 22.776894,
+        "longitude": 73.603592
+      },
+      "stationNameHindi": "गोधरा जं",
+      "division": "BRC",
+      "zone": "WR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "BRC",
+      "stnName": "VADODARA JN",
+      "arrival": "18:01",
+      "departure": "18:11",
+      "halt": "10 min",
+      "haltMinutes": 10,
+      "distance": "1500",
+      "day": "2",
+      "platform": 1,
+      "coordinates": {
+        "latitude": 22.310696,
+        "longitude": 73.181005
+      },
+      "stationNameHindi": "वडोदरा जं",
+      "division": "BRC",
+      "zone": "WR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "ST",
+      "stnName": "SURAT",
+      "arrival": "19:41",
+      "departure": "19:46",
+      "halt": "5 min",
+      "haltMinutes": 5,
+      "distance": "1629",
+      "day": "2",
+      "platform": 2,
+      "coordinates": {
+        "latitude": 21.206418,
+        "longitude": 72.840643
+      },
+      "stationNameHindi": "सूरत",
+      "division": "BCT",
+      "zone": "WR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "BVI",
+      "stnName": "BORIVALI",
+      "arrival": "22:43",
+      "departure": "22:45",
+      "halt": "2 min",
+      "haltMinutes": 2,
+      "distance": "1862",
+      "day": "2",
+      "platform": 9,
+      "coordinates": {
+        "latitude": 19.229149,
+        "longitude": 72.856822
+      },
+      "stationNameHindi": "बोरिवली",
+      "division": "BCT",
+      "zone": "WR",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "BDTS",
+      "stnName": "BANDRA TERMINUS",
+      "arrival": "23:55",
+      "departure": "--",
+      "halt": "0 min",
+      "haltMinutes": 0,
+      "distance": "1881",
+      "day": "2",
+      "platform": 7,
+      "coordinates": {
+        "latitude": 19.062341,
+        "longitude": 72.840965
+      },
+      "stationNameHindi": "बांद्रा टर्मिनस",
+      "division": "BCT",
+      "zone": "",
+      "daysOfArrival": "DAILY",
+      "directionChangeCount": 0
+    }
+  ]
+}

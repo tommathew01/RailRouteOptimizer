@@ -1,0 +1,173 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------------------------
+ * Design tokens. Status colours are always paired with an icon and text (never colour alone).
+ * ------------------------------------------------------------------------------------------- */
+:root {
+  --background: #f6f8f9;
+  --surface: #ffffff;
+  --surface-muted: #eef2f4;
+  --foreground: #13232b;
+  --muted: #4f6470;
+  --border: #d5dee3;
+  --brand: #0f4c5c;
+  --brand-strong: #0a3742;
+  --brand-contrast: #ffffff;
+  --accent: #e3a33b;
+  --focus: #1d7fe0;
+
+  --ok: #166534;
+  --ok-bg: #e7f6ec;
+  --rac: #92400e;
+  --rac-bg: #fdf3e1;
+  --wl: #9a3412;
+  --wl-bg: #fdece4;
+  --na: #475569;
+  --na-bg: #eef1f5;
+  --danger: #b42318;
+  --danger-bg: #fdecea;
+  --info: #1d4f91;
+  --info-bg: #e8f0fb;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0b1418;
+    --surface: #111e24;
+    --surface-muted: #172a32;
+    --foreground: #e6eef1;
+    --muted: #9fb3bd;
+    --border: #284049;
+    --brand: #4fb3c8;
+    --brand-strong: #7fd0e0;
+    --brand-contrast: #06191e;
+    --accent: #f2bd62;
+    --focus: #6cb4ff;
+
+    --ok: #6ee7a0;
+    --ok-bg: #0f2a1b;
+    --rac: #fcd27b;
+    --rac-bg: #2d2210;
+    --wl: #fdac85;
+    --wl-bg: #33190f;
+    --na: #b6c2cf;
+    --na-bg: #1c262f;
+    --danger: #ff9b8f;
+    --danger-bg: #3a1512;
+    --info: #9cc2ff;
+    --info-bg: #102238;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-contrast: var(--brand-contrast);
+  --color-accent: var(--accent);
+  --color-ok: var(--ok);
+  --color-ok-bg: var(--ok-bg);
+  --color-rac: var(--rac);
+  --color-rac-bg: var(--rac-bg);
+  --color-wl: var(--wl);
+  --color-wl-bg: var(--wl-bg);
+  --color-na: var(--na);
+  --color-na-bg: var(--na-bg);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
+  }
+
+  .skip-link {
+    @apply sr-only;
+  }
+  .skip-link:focus {
+    @apply not-sr-only fixed top-2 left-2 z-50 rounded-md bg-surface px-3 py-2 shadow;
+  }
+
+  .site-header {
+    @apply border-b border-border bg-surface;
+  }
+  .site-footer {
+    @apply mt-auto border-t border-border bg-surface;
+  }
+
+  .brand {
+    @apply inline-flex items-center gap-2 text-lg font-semibold tracking-tight text-brand;
+  }
+  .brand-mark {
+    @apply inline-flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-brand-contrast;
+  }
+
+  .banner {
+    @apply border-b px-4 py-2 text-center text-sm;
+  }
+  .banner-demo {
+    @apply border-accent/50 bg-accent/15 text-foreground;
+  }
+  .banner-warning {
+    @apply border-danger/40 bg-danger-bg text-danger;
+  }
+
+  .card {
+    @apply rounded-xl border border-border bg-surface p-4 shadow-sm sm:p-5;
+  }
+
+  .btn {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .btn-primary {
+    @apply bg-brand text-brand-contrast hover:bg-brand-strong;
+  }
+  .btn-secondary {
+    @apply border border-border bg-surface text-foreground hover:bg-surface-muted;
+  }
+
+  .field-label {
+    @apply mb-1 block text-sm font-medium;
+  }
+  .field-input {
+    @apply min-h-11 w-full rounded-lg border border-border bg-surface px-3 py-2 text-base text-foreground placeholder:text-muted;
+  }
+  .field-error {
+    @apply mt-1 text-sm text-danger;
+  }
+}

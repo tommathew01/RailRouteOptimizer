@@ -1,0 +1,4 @@
+{
+  "success": true,
+  "data": [{ "train_no": "12904", "train_name": "GOLDEN TEMPLE M", "source_stn_name": "Amritsar Jn", "source_stn_code": "ASR", "dstn_stn_name": "Bandra Terminus", "dstn_stn_code": "BDTS", "from_stn_name": "Hazrat Nizamuddin", "from_stn_code": "NZM", "to_stn_name": "Bandra Terminus", "to_stn_code": "BDTS", "from_time": "04:00", "to_time": "23:55", "travel_time": "19:55 hrs", "running_days": "1111111", "distance": "1365", "halts": 20 }]
+}

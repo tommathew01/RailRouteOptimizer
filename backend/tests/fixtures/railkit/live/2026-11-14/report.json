@@ -1,0 +1,70 @@
+{
+  "captured_at": "2026-11-14T17:05:04+00:00",
+  "search": "NDLS->BCT",
+  "journey_date": "2026-11-28",
+  "trains_returned": 17,
+  "exact_station_matches": 0,
+  "probe_train": {
+    "train": "12248",
+    "pair": "NZM->BDTS",
+    "origin": "NZM",
+    "running_days": "0000010",
+    "crosses_midnight": true
+  },
+  "route": {
+    "stops": 7,
+    "verified": true,
+    "issues": []
+  },
+  "travel_class": "CC",
+  "direct": {
+    "status": "WAITLIST",
+    "raw_status": "GNWL86/WL60",
+    "prediction": "82% Chance",
+    "can_book": true,
+    "anomalies": [],
+    "days_returned": 4
+  },
+  "Q1": {
+    "later_stop": "RTM",
+    "later_stop_departure_day_offset": 1,
+    "probes": {
+      "boarding_date": {
+        "segment": "RTM->BDTS",
+        "sent": "2026-11-29",
+        "days": [
+          {
+            "date": "2026-11-29",
+            "raw_status": "RLWL3/WL3",
+            "status": "WAITLIST",
+            "looks_running": true
+          },
+          {
+            "date": "2026-12-06",
+            "raw_status": "RLWL2/WL1",
+            "status": "WAITLIST",
+            "looks_running": true
+          },
+          {
+            "date": "2026-12-13",
+            "raw_status": "RLWL2/WL2",
+            "status": "WAITLIST",
+            "looks_running": true
+          },
+          {
+            "date": "2026-12-20",
+            "raw_status": "AVAILABLE-0019",
+            "status": "AVAILABLE",
+            "looks_running": true
+          }
+        ]
+      },
+      "train_start_date": {
+        "segment": "RTM->BDTS",
+        "sent": "2026-11-28",
+        "error": "REJECTED 400: Unable to process your request\n"
+      }
+    },
+    "verdict": "SEGMENT_BOARDING_DATE"
+  }
+}

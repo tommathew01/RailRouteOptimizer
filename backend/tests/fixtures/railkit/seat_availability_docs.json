@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "data": {
+    "train": { "trainNo": "12904", "trainName": "GOLDEN TEMPLE M", "from": "NZM", "to": "BDTS", "fromStationName": "Delhi Hazrat Nizamuddin", "toStationName": "Mumbai Bandra Terminus", "distance": 1366, "travelClass": "3A", "quota": "GN" },
+    "fare": { "baseFare": 1505, "reservationCharge": 40, "superfastCharge": 45, "serviceTax": 80, "totalFare": 1670 },
+    "availability": [{ "date": "1-9-2026", "status": "WAITLIST", "availabilityText": "WL 23", "rawStatus": "RLWL31/WL23", "prediction": "73% Chance", "predictionPercentage": 73, "canBook": true }]
+  }
+}

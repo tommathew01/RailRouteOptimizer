@@ -1,0 +1,173 @@
+{
+  "trainInfo": {
+    "train_no": "12248",
+    "train_name": "BANDRA YUVA EXP",
+    "from_stn_name": "HAZRAT NIZAMUDDIN JN",
+    "from_stn_code": "NZM",
+    "to_stn_name": "BANDRA TERMINUS",
+    "to_stn_code": "BDTS",
+    "from_time": "16:30",
+    "to_time": "09:15",
+    "travel_time": "16:45 hrs",
+    "running_days": "0000010",
+    "type": "SUPERFAST",
+    "train_name_hindi": "निज्जामउुदिन बान्द्रा युवा",
+    "type_code": "SUF",
+    "subtype": "SUPERFAST",
+    "owning_railway": "WR",
+    "gauge": "BG",
+    "total_distance": 1362,
+    "destination_day": 2,
+    "classes": [
+      "3E",
+      "CC"
+    ],
+    "prs_classes": [
+      "3E",
+      "CC"
+    ],
+    "pantry_type": ""
+  },
+  "route": [
+    {
+      "stnCode": "NZM",
+      "stnName": "HAZRAT NIZAMUDDIN JN",
+      "arrival": "--",
+      "departure": "16:30",
+      "halt": "0 min",
+      "haltMinutes": 0,
+      "distance": "0",
+      "day": "1",
+      "platform": 8,
+      "coordinates": {
+        "latitude": 28.58731,
+        "longitude": 77.254229
+      },
+      "stationNameHindi": "हजरत निजामुद्दीन",
+      "division": "DLI",
+      "zone": "NR",
+      "daysOfArrival": "SAT",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "MTJ",
+      "stnName": "MATHURA JN",
+      "arrival": "18:03",
+      "departure": "18:05",
+      "halt": "2 min",
+      "haltMinutes": 2,
+      "distance": "133",
+      "day": "1",
+      "platform": 3,
+      "coordinates": {
+        "latitude": 27.480025,
+        "longitude": 77.672997
+      },
+      "stationNameHindi": "मथुरा जं",
+      "division": "AGRA",
+      "zone": "NCR",
+      "daysOfArrival": "SAT",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "KOTA",
+      "stnName": "KOTA JN",
+      "arrival": "21:15",
+      "departure": "21:20",
+      "halt": "5 min",
+      "haltMinutes": 5,
+      "distance": "457",
+      "day": "1",
+      "platform": 2,
+      "coordinates": {
+        "latitude": 25.223733,
+        "longitude": 75.88068
+      },
+      "stationNameHindi": "कोटा जं",
+      "division": "KOTA",
+      "zone": "WCR",
+      "daysOfArrival": "SAT",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "RTM",
+      "stnName": "RATLAM JN",
+      "arrival": "00:15",
+      "departure": "00:18",
+      "halt": "3 min",
+      "haltMinutes": 3,
+      "distance": "724",
+      "day": "2",
+      "platform": 4,
+      "coordinates": {
+        "latitude": 23.34068,
+        "longitude": 75.051126
+      },
+      "stationNameHindi": "रतलाम जं",
+      "division": "RTM",
+      "zone": "WR",
+      "daysOfArrival": "SUN",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "BRC",
+      "stnName": "VADODARA JN",
+      "arrival": "03:55",
+      "departure": "04:05",
+      "halt": "10 min",
+      "haltMinutes": 10,
+      "distance": "981",
+      "day": "2",
+      "platform": 2,
+      "coordinates": {
+        "latitude": 22.310696,
+        "longitude": 73.181005
+      },
+      "stationNameHindi": "वडोदरा जं",
+      "division": "BRC",
+      "zone": "WR",
+      "daysOfArrival": "SUN",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "ST",
+      "stnName": "SURAT",
+      "arrival": "05:37",
+      "departure": "05:42",
+      "halt": "5 min",
+      "haltMinutes": 5,
+      "distance": "1111",
+      "day": "2",
+      "platform": 4,
+      "coordinates": {
+        "latitude": 21.206418,
+        "longitude": 72.840643
+      },
+      "stationNameHindi": "सूरत",
+      "division": "BCT",
+      "zone": "WR",
+      "daysOfArrival": "SUN",
+      "directionChangeCount": 0
+    },
+    {
+      "stnCode": "BDTS",
+      "stnName": "BANDRA TERMINUS",
+      "arrival": "09:15",
+      "departure": "--",
+      "halt": "0 min",
+      "haltMinutes": 0,
+      "distance": "1362",
+      "day": "2",
+      "platform": 5,
+      "coordinates": {
+        "latitude": 19.062341,
+        "longitude": 72.840965
+      },
+      "stationNameHindi": "बांद्रा टर्मिनस",
+      "division": "BCT",
+      "zone": "",
+      "daysOfArrival": "SUN",
+      "directionChangeCount": 0
+    }
+  ]
+}

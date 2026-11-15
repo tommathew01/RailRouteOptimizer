@@ -1,0 +1,14 @@
+{
+  "success": true,
+  "data": {
+    "trainInfo": { "train_no": "16999", "train_name": "SYNTHETIC OVERNIGHT EXP", "from_stn_code": "CLT", "to_stn_code": "TVC", "from_time": "22:30", "to_time": "06:05", "travel_time": "07:35 hrs", "running_days": "1111111", "classes": ["2A", "3A", "SL", "GEN"] },
+    "route": [
+      { "stnCode": "CLT", "stnName": "KOZHIKODE MAIN", "arrival": "--", "departure": "22:30", "halt": "0 min", "haltMinutes": 0, "distance": "0", "day": "1", "platform": 1 },
+      { "stnCode": "TIR", "stnName": "TIRUR", "arrival": "23:21", "departure": "23:23", "halt": "2 min", "haltMinutes": 2, "distance": "41", "day": "1", "platform": "2" },
+      { "stnCode": "SRR", "stnName": "SHORANUR JN", "arrival": "23:58", "departure": "00:08", "halt": "10 min", "distance": "86", "day": "1" },
+      { "stnCode": "TCR", "stnName": "THRISSUR", "arrival": "00:50", "departure": "00:53", "halt": "3 min", "haltMinutes": 3, "distance": "119", "day": "2" },
+      { "stnCode": "ERS", "stnName": "ERNAKULAM JN", "arrival": "02:20", "departure": "02:30", "halt": "10 min", "haltMinutes": 10, "distance": "193", "day": "2" },
+      { "stnCode": "TVC", "stnName": "THIRUVANANTHAPURAM CNTL", "arrival": "06:05", "departure": "--", "halt": "0 min", "haltMinutes": 0, "distance": "394", "day": "2" }
+    ]
+  }
+}

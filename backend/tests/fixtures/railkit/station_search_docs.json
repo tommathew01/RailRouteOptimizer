@@ -1,0 +1,11 @@
+{
+  "success": true,
+  "data": {
+    "query": "delhi",
+    "count": 2,
+    "stations": [
+      { "code": "ANDI", "name": "ADARSH NAGAR DELHI", "lat": 28.714265, "lon": 77.166767 },
+      { "code": "DAZ", "name": "DELHI AZADPUR", "lat": 28.703086, "lon": 77.177153 }
+    ]
+  }
+}

@@ -1,0 +1,2710 @@
+{
+  "search_id": "e2569750-02e6-4250-ba4f-461faf2dfb14",
+  "status": "COMPLETED",
+  "status_url": "/api/v1/journeys/e2569750-02e6-4250-ba4f-461faf2dfb14",
+  "data_mode": "DEMO",
+  "provider": "MOCK",
+  "request": {
+    "source": "TIR",
+    "destination": "TVC",
+    "journey_date": "2026-11-20",
+    "classes": [
+      "3A",
+      "SL"
+    ],
+    "quota": "GN",
+    "filters": {
+      "allow_rac": true,
+      "allow_waitlist": true
+    },
+    "max_segments": 4,
+    "train_numbers": null
+  },
+  "search_completeness": "PARTIAL_BUDGET",
+  "incomplete_reason": "AVAILABILITY_REQUEST_BUDGET_REACHED",
+  "coverage": {
+    "trains_found": 2,
+    "trains_evaluated": 2,
+    "combinations_evaluated": 4,
+    "availability_requests_planned": 83,
+    "availability_requests_made": 60,
+    "request_budget": 60,
+    "cache_hits": 0,
+    "segments_checked": 60,
+    "segments_unknown": 0,
+    "segments_failed": 0
+  },
+  "trains": [
+    {
+      "train_number": "90601",
+      "train_name": "DEMO COASTAL EXPRESS",
+      "evaluation": "EVALUATED",
+      "route_issues": [],
+      "departure": "2026-11-20T22:04:00+05:30",
+      "arrival": "2026-11-21T05:58:00+05:30",
+      "intermediate_stops_total": 13,
+      "intermediate_stops_considered": 13,
+      "classes": [
+        {
+          "travel_class": "3A",
+          "state": "SOLVED",
+          "depth_reached": 2,
+          "best_status_tier": 0,
+          "recommendations": 2
+        },
+        {
+          "travel_class": "SL",
+          "state": "SOLVED",
+          "depth_reached": 2,
+          "best_status_tier": 0,
+          "recommendations": 1
+        }
+      ]
+    },
+    {
+      "train_number": "90603",
+      "train_name": "DEMO NIGHT MAIL",
+      "evaluation": "EVALUATED",
+      "route_issues": [],
+      "departure": "2026-11-20T23:23:00+05:30",
+      "arrival": "2026-11-21T07:18:00+05:30",
+      "intermediate_stops_total": 7,
+      "intermediate_stops_considered": 7,
+      "classes": [
+        {
+          "travel_class": "3A",
+          "state": "STOPPED",
+          "depth_reached": 3,
+          "best_status_tier": 2,
+          "recommendations": 11
+        },
+        {
+          "travel_class": "SL",
+          "state": "STOPPED",
+          "depth_reached": 3,
+          "best_status_tier": 2,
+          "recommendations": 6
+        }
+      ]
+    }
+  ],
+  "recommendations": [
+    {
+      "rank": 1,
+      "train_number": "90601",
+      "train_name": "DEMO COASTAL EXPRESS",
+      "travel_class": "SL",
+      "travel_class_label": "Sleeper",
+      "quota": "GN",
+      "train_start_date": "2026-11-20",
+      "segment_count": 2,
+      "status_tier": 0,
+      "status_tier_label": "All segments confirmed or available",
+      "segments": [
+        {
+          "sequence": 0,
+          "source": "TIR",
+          "source_name": "Tirur",
+          "destination": "KTYM",
+          "destination_name": "Kottayam",
+          "departure": "2026-11-20T22:04:00+05:30",
+          "arrival": "2026-11-21T02:41:00+05:30",
+          "provider_query_date": "2026-11-20",
+          "boards_on_later_date": false,
+          "status": "AVAILABLE",
+          "availability_text": "AVL 26",
+          "raw_status": "AVAILABLE-0026",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": null,
+          "available_count": 26,
+          "can_book": true,
+          "prediction": null,
+          "fare": {
+            "amount": "139.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "649ef021-fec2-41e3-b27f-8cf31095c348"
+        },
+        {
+          "sequence": 1,
+          "source": "KTYM",
+          "source_name": "Kottayam",
+          "destination": "TVC",
+          "destination_name": "Thiruvananthapuram Central",
+          "departure": "2026-11-21T02:44:00+05:30",
+          "arrival": "2026-11-21T05:58:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "AVAILABLE",
+          "availability_text": "AVL 58",
+          "raw_status": "AVAILABLE-0058",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": null,
+          "available_count": 58,
+          "can_book": true,
+          "prediction": null,
+          "fare": {
+            "amount": "107.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "261a854a-fbde-4be0-90b4-3e806282675a"
+        }
+      ],
+      "total_fare": {
+        "amount": "246.00",
+        "currency": "INR",
+        "basis": null
+      },
+      "fare_complete": true,
+      "prediction_summary": {
+        "kind": "MINIMUM_SEGMENT_ESTIMATE",
+        "minimum_percentage": null,
+        "segments_with_estimate": 0,
+        "segments_needing_estimate": 0,
+        "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+      },
+      "explanation": [
+        "Every segment is currently confirmed or available.",
+        "2 separate tickets.",
+        "Total fare INR 246.00 (every segment priced)."
+      ],
+      "booking_steps": [
+        "Ticket 1 of 2: train 90601, TIR → KTYM, departing 20 Nov 2026 22:04 IST, class SL, General (GN) quota.",
+        "Ticket 2 of 2: train 90601, KTYM → TVC, departing 21 Nov 2026 02:44 IST, class SL, General (GN) quota.",
+        "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at KTYM.",
+        "Check every ticket on an authorized booking platform before paying."
+      ],
+      "oldest_checked_at": "2026-11-08T10:00:00Z"
+    },
+    {
+      "rank": 2,
+      "train_number": "90601",
+      "train_name": "DEMO COASTAL EXPRESS",
+      "travel_class": "3A",
+      "travel_class_label": "AC 3 Tier",
+      "quota": "GN",
+      "train_start_date": "2026-11-20",
+      "segment_count": 2,
+      "status_tier": 0,
+      "status_tier_label": "All segments confirmed or available",
+      "segments": [
+        {
+          "sequence": 0,
+          "source": "TIR",
+          "source_name": "Tirur",
+          "destination": "ERS",
+          "destination_name": "Ernakulam Junction",
+          "departure": "2026-11-20T22:04:00+05:30",
+          "arrival": "2026-11-21T01:17:00+05:30",
+          "provider_query_date": "2026-11-20",
+          "boards_on_later_date": false,
+          "status": "AVAILABLE",
+          "availability_text": "AVL 7",
+          "raw_status": "AVAILABLE-0007",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": null,
+          "available_count": 7,
+          "can_book": true,
+          "prediction": null,
+          "fare": {
+            "amount": "260.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "203893fe-45ec-4a24-8ec4-444a3ace19a3"
+        },
+        {
+          "sequence": 1,
+          "source": "ERS",
+          "source_name": "Ernakulam Junction",
+          "destination": "TVC",
+          "destination_name": "Thiruvananthapuram Central",
+          "departure": "2026-11-21T01:27:00+05:30",
+          "arrival": "2026-11-21T05:58:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "AVAILABLE",
+          "availability_text": "AVL 31",
+          "raw_status": "AVAILABLE-0031",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": null,
+          "available_count": 31,
+          "can_book": true,
+          "prediction": null,
+          "fare": {
+            "amount": "363.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "a3d7b58a-568d-41c2-986f-1464f19ce71d"
+        }
+      ],
+      "total_fare": {
+        "amount": "623.00",
+        "currency": "INR",
+        "basis": null
+      },
+      "fare_complete": true,
+      "prediction_summary": {
+        "kind": "MINIMUM_SEGMENT_ESTIMATE",
+        "minimum_percentage": null,
+        "segments_with_estimate": 0,
+        "segments_needing_estimate": 0,
+        "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+      },
+      "explanation": [
+        "Every segment is currently confirmed or available.",
+        "2 separate tickets.",
+        "Total fare INR 623.00 (every segment priced)."
+      ],
+      "booking_steps": [
+        "Ticket 1 of 2: train 90601, TIR → ERS, departing 20 Nov 2026 22:04 IST, class 3A, General (GN) quota.",
+        "Ticket 2 of 2: train 90601, ERS → TVC, departing 21 Nov 2026 01:27 IST, class 3A, General (GN) quota.",
+        "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at ERS.",
+        "Check every ticket on an authorized booking platform before paying."
+      ],
+      "oldest_checked_at": "2026-11-08T10:00:00Z"
+    },
+    {
+      "rank": 3,
+      "train_number": "90603",
+      "train_name": "DEMO NIGHT MAIL",
+      "travel_class": "SL",
+      "travel_class_label": "Sleeper",
+      "quota": "GN",
+      "train_start_date": "2026-11-20",
+      "segment_count": 4,
+      "status_tier": 1,
+      "status_tier_label": "Includes RAC",
+      "segments": [
+        {
+          "sequence": 0,
+          "source": "TIR",
+          "source_name": "Tirur",
+          "destination": "SRR",
+          "destination_name": "Shoranur Junction",
+          "departure": "2026-11-20T23:23:00+05:30",
+          "arrival": "2026-11-21T00:19:00+05:30",
+          "provider_query_date": "2026-11-20",
+          "boards_on_later_date": false,
+          "status": "RAC",
+          "availability_text": "RAC 10",
+          "raw_status": "RAC 10",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": 10,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "77% Chance",
+            "percentage": 77.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "45.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "e79999d6-18f4-44b0-9fd2-041699ca8f4e"
+        },
+        {
+          "sequence": 1,
+          "source": "SRR",
+          "source_name": "Shoranur Junction",
+          "destination": "ERS",
+          "destination_name": "Ernakulam Junction",
+          "departure": "2026-11-21T00:29:00+05:30",
+          "arrival": "2026-11-21T02:47:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "RAC",
+          "availability_text": "RAC 12",
+          "raw_status": "RAC 12",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": 12,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "73% Chance",
+            "percentage": 73.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "79.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "5fc22c2a-5a74-4104-bf13-53d486345033"
+        },
+        {
+          "sequence": 2,
+          "source": "ERS",
+          "source_name": "Ernakulam Junction",
+          "destination": "KYJ",
+          "destination_name": "Kayamkulam Junction",
+          "departure": "2026-11-21T02:57:00+05:30",
+          "arrival": "2026-11-21T05:06:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "RAC",
+          "availability_text": "RAC 25",
+          "raw_status": "RAC 25",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": 25,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "55% Chance",
+            "percentage": 55.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "76.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "56325bdd-0178-4c1b-bf15-de1d7b4f29d5"
+        },
+        {
+          "sequence": 3,
+          "source": "KYJ",
+          "source_name": "Kayamkulam Junction",
+          "destination": "TVC",
+          "destination_name": "Thiruvananthapuram Central",
+          "departure": "2026-11-21T05:08:00+05:30",
+          "arrival": "2026-11-21T07:18:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "RAC",
+          "availability_text": "RAC 6",
+          "raw_status": "RAC 6",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": 6,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "85% Chance",
+            "percentage": 85.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "75.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "cae4716b-082e-40bd-a5e1-986432246fd8"
+        }
+      ],
+      "total_fare": {
+        "amount": "275.00",
+        "currency": "INR",
+        "basis": null
+      },
+      "fare_complete": true,
+      "prediction_summary": {
+        "kind": "MINIMUM_SEGMENT_ESTIMATE",
+        "minimum_percentage": 55.0,
+        "segments_with_estimate": 4,
+        "segments_needing_estimate": 4,
+        "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+      },
+      "explanation": [
+        "Includes RAC on 4 segment(s).",
+        "Lowest Demo provider estimate on RAC/waitlist segments: 55%.",
+        "4 separate tickets.",
+        "Total fare INR 275.00 (every segment priced)."
+      ],
+      "booking_steps": [
+        "Ticket 1 of 4: train 90603, TIR → SRR, departing 20 Nov 2026 23:23 IST, class SL, General (GN) quota.",
+        "Ticket 2 of 4: train 90603, SRR → ERS, departing 21 Nov 2026 00:29 IST, class SL, General (GN) quota.",
+        "Ticket 3 of 4: train 90603, ERS → KYJ, departing 21 Nov 2026 02:57 IST, class SL, General (GN) quota.",
+        "Ticket 4 of 4: train 90603, KYJ → TVC, departing 21 Nov 2026 05:08 IST, class SL, General (GN) quota.",
+        "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at SRR, ERS, KYJ.",
+        "Check every ticket on an authorized booking platform before paying."
+      ],
+      "oldest_checked_at": "2026-11-08T10:00:00Z"
+    },
+    {
+      "rank": 4,
+      "train_number": "90603",
+      "train_name": "DEMO NIGHT MAIL",
+      "travel_class": "SL",
+      "travel_class_label": "Sleeper",
+      "quota": "GN",
+      "train_start_date": "2026-11-20",
+      "segment_count": 2,
+      "status_tier": 2,
+      "status_tier_label": "Includes waitlist",
+      "segments": [
+        {
+          "sequence": 0,
+          "source": "TIR",
+          "source_name": "Tirur",
+          "destination": "TCR",
+          "destination_name": "Thrissur",
+          "departure": "2026-11-20T23:23:00+05:30",
+          "arrival": "2026-11-21T01:10:00+05:30",
+          "provider_query_date": "2026-11-20",
+          "boards_on_later_date": false,
+          "status": "AVAILABLE",
+          "availability_text": "AVL 6",
+          "raw_status": "AVAILABLE-0006",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": null,
+          "available_count": 6,
+          "can_book": true,
+          "prediction": null,
+          "fare": {
+            "amount": "63.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "39a794f4-cacc-483f-962f-50f5eae61f2a"
+        },
+        {
+          "sequence": 1,
+          "source": "TCR",
+          "source_name": "Thrissur",
+          "destination": "TVC",
+          "destination_name": "Thiruvananthapuram Central",
+          "departure": "2026-11-21T01:13:00+05:30",
+          "arrival": "2026-11-21T07:18:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "WAITLIST",
+          "availability_text": "WL 10",
+          "raw_status": "GNWL19/WL10",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 10,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "81% Chance",
+            "percentage": 81.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "171.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "601b17e1-b654-4db9-b981-e2f092fc7331"
+        }
+      ],
+      "total_fare": {
+        "amount": "234.00",
+        "currency": "INR",
+        "basis": null
+      },
+      "fare_complete": true,
+      "prediction_summary": {
+        "kind": "MINIMUM_SEGMENT_ESTIMATE",
+        "minimum_percentage": 81.0,
+        "segments_with_estimate": 1,
+        "segments_needing_estimate": 1,
+        "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+      },
+      "explanation": [
+        "Includes a waitlist on 1 segment(s).",
+        "Lowest Demo provider estimate on RAC/waitlist segments: 81%.",
+        "2 separate tickets.",
+        "Total fare INR 234.00 (every segment priced)."
+      ],
+      "booking_steps": [
+        "Ticket 1 of 2: train 90603, TIR → TCR, departing 20 Nov 2026 23:23 IST, class SL, General (GN) quota.",
+        "Ticket 2 of 2: train 90603, TCR → TVC, departing 21 Nov 2026 01:13 IST, class SL, General (GN) quota.",
+        "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at TCR.",
+        "Check every ticket on an authorized booking platform before paying."
+      ],
+      "oldest_checked_at": "2026-11-08T10:00:00Z"
+    },
+    {
+      "rank": 5,
+      "train_number": "90603",
+      "train_name": "DEMO NIGHT MAIL",
+      "travel_class": "SL",
+      "travel_class_label": "Sleeper",
+      "quota": "GN",
+      "train_start_date": "2026-11-20",
+      "segment_count": 2,
+      "status_tier": 2,
+      "status_tier_label": "Includes waitlist",
+      "segments": [
+        {
+          "sequence": 0,
+          "source": "TIR",
+          "source_name": "Tirur",
+          "destination": "SRR",
+          "destination_name": "Shoranur Junction",
+          "departure": "2026-11-20T23:23:00+05:30",
+          "arrival": "2026-11-21T00:19:00+05:30",
+          "provider_query_date": "2026-11-20",
+          "boards_on_later_date": false,
+          "status": "RAC",
+          "availability_text": "RAC 10",
+          "raw_status": "RAC 10",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": 10,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "77% Chance",
+            "percentage": 77.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "45.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "e79999d6-18f4-44b0-9fd2-041699ca8f4e"
+        },
+        {
+          "sequence": 1,
+          "source": "SRR",
+          "source_name": "Shoranur Junction",
+          "destination": "TVC",
+          "destination_name": "Thiruvananthapuram Central",
+          "departure": "2026-11-21T00:29:00+05:30",
+          "arrival": "2026-11-21T07:18:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "WAITLIST",
+          "availability_text": "WL 11",
+          "raw_status": "GNWL25/WL11",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 11,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "80% Chance",
+            "percentage": 80.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "189.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "9172a93b-38ba-435c-b5da-929cc2d950dd"
+        }
+      ],
+      "total_fare": {
+        "amount": "234.00",
+        "currency": "INR",
+        "basis": null
+      },
+      "fare_complete": true,
+      "prediction_summary": {
+        "kind": "MINIMUM_SEGMENT_ESTIMATE",
+        "minimum_percentage": 77.0,
+        "segments_with_estimate": 2,
+        "segments_needing_estimate": 2,
+        "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+      },
+      "explanation": [
+        "Includes a waitlist on 1 segment(s).",
+        "Lowest Demo provider estimate on RAC/waitlist segments: 77%.",
+        "2 separate tickets.",
+        "Total fare INR 234.00 (every segment priced)."
+      ],
+      "booking_steps": [
+        "Ticket 1 of 2: train 90603, TIR → SRR, departing 20 Nov 2026 23:23 IST, class SL, General (GN) quota.",
+        "Ticket 2 of 2: train 90603, SRR → TVC, departing 21 Nov 2026 00:29 IST, class SL, General (GN) quota.",
+        "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at SRR.",
+        "Check every ticket on an authorized booking platform before paying."
+      ],
+      "oldest_checked_at": "2026-11-08T10:00:00Z"
+    },
+    {
+      "rank": 6,
+      "train_number": "90603",
+      "train_name": "DEMO NIGHT MAIL",
+      "travel_class": "3A",
+      "travel_class_label": "AC 3 Tier",
+      "quota": "GN",
+      "train_start_date": "2026-11-20",
+      "segment_count": 2,
+      "status_tier": 2,
+      "status_tier_label": "Includes waitlist",
+      "segments": [
+        {
+          "sequence": 0,
+          "source": "TIR",
+          "source_name": "Tirur",
+          "destination": "QLN",
+          "destination_name": "Kollam Junction",
+          "departure": "2026-11-20T23:23:00+05:30",
+          "arrival": "2026-11-21T05:52:00+05:30",
+          "provider_query_date": "2026-11-20",
+          "boards_on_later_date": false,
+          "status": "WAITLIST",
+          "availability_text": "WL 17",
+          "raw_status": "GNWL28/WL17",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 17,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "73% Chance",
+            "percentage": 73.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "458.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "da1887f3-c571-41f5-ad23-f8865e674ae6"
+        },
+        {
+          "sequence": 1,
+          "source": "QLN",
+          "source_name": "Kollam Junction",
+          "destination": "TVC",
+          "destination_name": "Thiruvananthapuram Central",
+          "departure": "2026-11-21T05:57:00+05:30",
+          "arrival": "2026-11-21T07:18:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "AVAILABLE",
+          "availability_text": "AVL 36",
+          "raw_status": "AVAILABLE-0036",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": null,
+          "available_count": 36,
+          "can_book": true,
+          "prediction": null,
+          "fare": {
+            "amount": "134.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "7f9800ac-4d9d-4b2e-9378-a52f2c3138a8"
+        }
+      ],
+      "total_fare": {
+        "amount": "592.00",
+        "currency": "INR",
+        "basis": null
+      },
+      "fare_complete": true,
+      "prediction_summary": {
+        "kind": "MINIMUM_SEGMENT_ESTIMATE",
+        "minimum_percentage": 73.0,
+        "segments_with_estimate": 1,
+        "segments_needing_estimate": 1,
+        "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+      },
+      "explanation": [
+        "Includes a waitlist on 1 segment(s).",
+        "Lowest Demo provider estimate on RAC/waitlist segments: 73%.",
+        "2 separate tickets.",
+        "Total fare INR 592.00 (every segment priced)."
+      ],
+      "booking_steps": [
+        "Ticket 1 of 2: train 90603, TIR → QLN, departing 20 Nov 2026 23:23 IST, class 3A, General (GN) quota.",
+        "Ticket 2 of 2: train 90603, QLN → TVC, departing 21 Nov 2026 05:57 IST, class 3A, General (GN) quota.",
+        "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at QLN.",
+        "Check every ticket on an authorized booking platform before paying."
+      ],
+      "oldest_checked_at": "2026-11-08T10:00:00Z"
+    },
+    {
+      "rank": 7,
+      "train_number": "90603",
+      "train_name": "DEMO NIGHT MAIL",
+      "travel_class": "SL",
+      "travel_class_label": "Sleeper",
+      "quota": "GN",
+      "train_start_date": "2026-11-20",
+      "segment_count": 3,
+      "status_tier": 2,
+      "status_tier_label": "Includes waitlist",
+      "segments": [
+        {
+          "sequence": 0,
+          "source": "TIR",
+          "source_name": "Tirur",
+          "destination": "SRR",
+          "destination_name": "Shoranur Junction",
+          "departure": "2026-11-20T23:23:00+05:30",
+          "arrival": "2026-11-21T00:19:00+05:30",
+          "provider_query_date": "2026-11-20",
+          "boards_on_later_date": false,
+          "status": "RAC",
+          "availability_text": "RAC 10",
+          "raw_status": "RAC 10",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": 10,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "77% Chance",
+            "percentage": 77.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "45.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "e79999d6-18f4-44b0-9fd2-041699ca8f4e"
+        },
+        {
+          "sequence": 1,
+          "source": "SRR",
+          "source_name": "Shoranur Junction",
+          "destination": "TCR",
+          "destination_name": "Thrissur",
+          "departure": "2026-11-21T00:29:00+05:30",
+          "arrival": "2026-11-21T01:10:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "RAC",
+          "availability_text": "RAC 19",
+          "raw_status": "RAC 19",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": 19,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "59% Chance",
+            "percentage": 59.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "38.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "b4acd85d-a998-43db-9d94-adc5d3cf1784"
+        },
+        {
+          "sequence": 2,
+          "source": "TCR",
+          "source_name": "Thrissur",
+          "destination": "TVC",
+          "destination_name": "Thiruvananthapuram Central",
+          "departure": "2026-11-21T01:13:00+05:30",
+          "arrival": "2026-11-21T07:18:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "WAITLIST",
+          "availability_text": "WL 10",
+          "raw_status": "GNWL19/WL10",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 10,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "81% Chance",
+            "percentage": 81.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "171.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "601b17e1-b654-4db9-b981-e2f092fc7331"
+        }
+      ],
+      "total_fare": {
+        "amount": "254.00",
+        "currency": "INR",
+        "basis": null
+      },
+      "fare_complete": true,
+      "prediction_summary": {
+        "kind": "MINIMUM_SEGMENT_ESTIMATE",
+        "minimum_percentage": 59.0,
+        "segments_with_estimate": 3,
+        "segments_needing_estimate": 3,
+        "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+      },
+      "explanation": [
+        "Includes a waitlist on 1 segment(s).",
+        "Lowest Demo provider estimate on RAC/waitlist segments: 59%.",
+        "3 separate tickets.",
+        "Total fare INR 254.00 (every segment priced)."
+      ],
+      "booking_steps": [
+        "Ticket 1 of 3: train 90603, TIR → SRR, departing 20 Nov 2026 23:23 IST, class SL, General (GN) quota.",
+        "Ticket 2 of 3: train 90603, SRR → TCR, departing 21 Nov 2026 00:29 IST, class SL, General (GN) quota.",
+        "Ticket 3 of 3: train 90603, TCR → TVC, departing 21 Nov 2026 01:13 IST, class SL, General (GN) quota.",
+        "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at SRR, TCR.",
+        "Check every ticket on an authorized booking platform before paying."
+      ],
+      "oldest_checked_at": "2026-11-08T10:00:00Z"
+    },
+    {
+      "rank": 8,
+      "train_number": "90603",
+      "train_name": "DEMO NIGHT MAIL",
+      "travel_class": "3A",
+      "travel_class_label": "AC 3 Tier",
+      "quota": "GN",
+      "train_start_date": "2026-11-20",
+      "segment_count": 4,
+      "status_tier": 2,
+      "status_tier_label": "Includes waitlist",
+      "segments": [
+        {
+          "sequence": 0,
+          "source": "TIR",
+          "source_name": "Tirur",
+          "destination": "AWY",
+          "destination_name": "Aluva",
+          "departure": "2026-11-20T23:23:00+05:30",
+          "arrival": "2026-11-21T02:19:00+05:30",
+          "provider_query_date": "2026-11-20",
+          "boards_on_later_date": false,
+          "status": "WAITLIST",
+          "availability_text": "WL 19",
+          "raw_status": "GNWL25/WL19",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 19,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "71% Chance",
+            "percentage": 71.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "230.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "80931b3f-368f-48d3-8059-167efe68cd66"
+        },
+        {
+          "sequence": 1,
+          "source": "AWY",
+          "source_name": "Aluva",
+          "destination": "ERS",
+          "destination_name": "Ernakulam Junction",
+          "departure": "2026-11-21T02:21:00+05:30",
+          "arrival": "2026-11-21T02:47:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "RAC",
+          "availability_text": "RAC 18",
+          "raw_status": "RAC 18",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": 18,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "61% Chance",
+            "percentage": 61.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "70.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "883be794-8317-4806-92f3-5479aeffb788"
+        },
+        {
+          "sequence": 2,
+          "source": "ERS",
+          "source_name": "Ernakulam Junction",
+          "destination": "KYJ",
+          "destination_name": "Kayamkulam Junction",
+          "departure": "2026-11-21T02:57:00+05:30",
+          "arrival": "2026-11-21T05:06:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "AVAILABLE",
+          "availability_text": "AVL 29",
+          "raw_status": "AVAILABLE-0029",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": null,
+          "available_count": 29,
+          "can_book": true,
+          "prediction": null,
+          "fare": {
+            "amount": "186.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "6bae0c15-4688-4a25-a5cf-8817d4f42f4b"
+        },
+        {
+          "sequence": 3,
+          "source": "KYJ",
+          "source_name": "Kayamkulam Junction",
+          "destination": "TVC",
+          "destination_name": "Thiruvananthapuram Central",
+          "departure": "2026-11-21T05:08:00+05:30",
+          "arrival": "2026-11-21T07:18:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "RAC",
+          "availability_text": "RAC 20",
+          "raw_status": "RAC 20",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": 20,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "57% Chance",
+            "percentage": 57.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "185.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "bc9ba512-e57d-456d-8427-f4d7dd6aa53c"
+        }
+      ],
+      "total_fare": {
+        "amount": "671.00",
+        "currency": "INR",
+        "basis": null
+      },
+      "fare_complete": true,
+      "prediction_summary": {
+        "kind": "MINIMUM_SEGMENT_ESTIMATE",
+        "minimum_percentage": 57.0,
+        "segments_with_estimate": 3,
+        "segments_needing_estimate": 3,
+        "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+      },
+      "explanation": [
+        "Includes a waitlist on 1 segment(s).",
+        "Lowest Demo provider estimate on RAC/waitlist segments: 57%.",
+        "4 separate tickets.",
+        "Total fare INR 671.00 (every segment priced)."
+      ],
+      "booking_steps": [
+        "Ticket 1 of 4: train 90603, TIR → AWY, departing 20 Nov 2026 23:23 IST, class 3A, General (GN) quota.",
+        "Ticket 2 of 4: train 90603, AWY → ERS, departing 21 Nov 2026 02:21 IST, class 3A, General (GN) quota.",
+        "Ticket 3 of 4: train 90603, ERS → KYJ, departing 21 Nov 2026 02:57 IST, class 3A, General (GN) quota.",
+        "Ticket 4 of 4: train 90603, KYJ → TVC, departing 21 Nov 2026 05:08 IST, class 3A, General (GN) quota.",
+        "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at AWY, ERS, KYJ.",
+        "Check every ticket on an authorized booking platform before paying."
+      ],
+      "oldest_checked_at": "2026-11-08T10:00:00Z"
+    },
+    {
+      "rank": 9,
+      "train_number": "90603",
+      "train_name": "DEMO NIGHT MAIL",
+      "travel_class": "3A",
+      "travel_class_label": "AC 3 Tier",
+      "quota": "GN",
+      "train_start_date": "2026-11-20",
+      "segment_count": 4,
+      "status_tier": 2,
+      "status_tier_label": "Includes waitlist",
+      "segments": [
+        {
+          "sequence": 0,
+          "source": "TIR",
+          "source_name": "Tirur",
+          "destination": "TCR",
+          "destination_name": "Thrissur",
+          "departure": "2026-11-20T23:23:00+05:30",
+          "arrival": "2026-11-21T01:10:00+05:30",
+          "provider_query_date": "2026-11-20",
+          "boards_on_later_date": false,
+          "status": "AVAILABLE",
+          "availability_text": "AVL 11",
+          "raw_status": "AVAILABLE-0011",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": null,
+          "available_count": 11,
+          "can_book": true,
+          "prediction": null,
+          "fare": {
+            "amount": "153.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "d7b82c07-21e0-442a-a0ab-325cb26b7782"
+        },
+        {
+          "sequence": 1,
+          "source": "TCR",
+          "source_name": "Thrissur",
+          "destination": "ERS",
+          "destination_name": "Ernakulam Junction",
+          "departure": "2026-11-21T01:13:00+05:30",
+          "arrival": "2026-11-21T02:47:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "WAITLIST",
+          "availability_text": "WL 26",
+          "raw_status": "GNWL37/WL26",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 26,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "63% Chance",
+            "percentage": 63.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "147.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "07650bf4-ddf5-4fe0-9661-0c9c636b8fbd"
+        },
+        {
+          "sequence": 2,
+          "source": "ERS",
+          "source_name": "Ernakulam Junction",
+          "destination": "KYJ",
+          "destination_name": "Kayamkulam Junction",
+          "departure": "2026-11-21T02:57:00+05:30",
+          "arrival": "2026-11-21T05:06:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "AVAILABLE",
+          "availability_text": "AVL 29",
+          "raw_status": "AVAILABLE-0029",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": null,
+          "available_count": 29,
+          "can_book": true,
+          "prediction": null,
+          "fare": {
+            "amount": "186.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "6bae0c15-4688-4a25-a5cf-8817d4f42f4b"
+        },
+        {
+          "sequence": 3,
+          "source": "KYJ",
+          "source_name": "Kayamkulam Junction",
+          "destination": "TVC",
+          "destination_name": "Thiruvananthapuram Central",
+          "departure": "2026-11-21T05:08:00+05:30",
+          "arrival": "2026-11-21T07:18:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "RAC",
+          "availability_text": "RAC 20",
+          "raw_status": "RAC 20",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": 20,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "57% Chance",
+            "percentage": 57.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "185.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "bc9ba512-e57d-456d-8427-f4d7dd6aa53c"
+        }
+      ],
+      "total_fare": {
+        "amount": "671.00",
+        "currency": "INR",
+        "basis": null
+      },
+      "fare_complete": true,
+      "prediction_summary": {
+        "kind": "MINIMUM_SEGMENT_ESTIMATE",
+        "minimum_percentage": 57.0,
+        "segments_with_estimate": 2,
+        "segments_needing_estimate": 2,
+        "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+      },
+      "explanation": [
+        "Includes a waitlist on 1 segment(s).",
+        "Lowest Demo provider estimate on RAC/waitlist segments: 57%.",
+        "4 separate tickets.",
+        "Total fare INR 671.00 (every segment priced)."
+      ],
+      "booking_steps": [
+        "Ticket 1 of 4: train 90603, TIR → TCR, departing 20 Nov 2026 23:23 IST, class 3A, General (GN) quota.",
+        "Ticket 2 of 4: train 90603, TCR → ERS, departing 21 Nov 2026 01:13 IST, class 3A, General (GN) quota.",
+        "Ticket 3 of 4: train 90603, ERS → KYJ, departing 21 Nov 2026 02:57 IST, class 3A, General (GN) quota.",
+        "Ticket 4 of 4: train 90603, KYJ → TVC, departing 21 Nov 2026 05:08 IST, class 3A, General (GN) quota.",
+        "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at TCR, ERS, KYJ.",
+        "Check every ticket on an authorized booking platform before paying."
+      ],
+      "oldest_checked_at": "2026-11-08T10:00:00Z"
+    },
+    {
+      "rank": 10,
+      "train_number": "90603",
+      "train_name": "DEMO NIGHT MAIL",
+      "travel_class": "SL",
+      "travel_class_label": "Sleeper",
+      "quota": "GN",
+      "train_start_date": "2026-11-20",
+      "segment_count": 3,
+      "status_tier": 2,
+      "status_tier_label": "Includes waitlist",
+      "segments": [
+        {
+          "sequence": 0,
+          "source": "TIR",
+          "source_name": "Tirur",
+          "destination": "ERS",
+          "destination_name": "Ernakulam Junction",
+          "departure": "2026-11-20T23:23:00+05:30",
+          "arrival": "2026-11-21T02:47:00+05:30",
+          "provider_query_date": "2026-11-20",
+          "boards_on_later_date": false,
+          "status": "WAITLIST",
+          "availability_text": "WL 21",
+          "raw_status": "GNWL29/WL21",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 21,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "69% Chance",
+            "percentage": 69.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "104.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "caea963f-c8fc-4815-94ca-b2273d11cfd2"
+        },
+        {
+          "sequence": 1,
+          "source": "ERS",
+          "source_name": "Ernakulam Junction",
+          "destination": "KYJ",
+          "destination_name": "Kayamkulam Junction",
+          "departure": "2026-11-21T02:57:00+05:30",
+          "arrival": "2026-11-21T05:06:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "RAC",
+          "availability_text": "RAC 25",
+          "raw_status": "RAC 25",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": 25,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "55% Chance",
+            "percentage": 55.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "76.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "56325bdd-0178-4c1b-bf15-de1d7b4f29d5"
+        },
+        {
+          "sequence": 2,
+          "source": "KYJ",
+          "source_name": "Kayamkulam Junction",
+          "destination": "TVC",
+          "destination_name": "Thiruvananthapuram Central",
+          "departure": "2026-11-21T05:08:00+05:30",
+          "arrival": "2026-11-21T07:18:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "RAC",
+          "availability_text": "RAC 6",
+          "raw_status": "RAC 6",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": 6,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "85% Chance",
+            "percentage": 85.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "75.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "cae4716b-082e-40bd-a5e1-986432246fd8"
+        }
+      ],
+      "total_fare": {
+        "amount": "255.00",
+        "currency": "INR",
+        "basis": null
+      },
+      "fare_complete": true,
+      "prediction_summary": {
+        "kind": "MINIMUM_SEGMENT_ESTIMATE",
+        "minimum_percentage": 55.0,
+        "segments_with_estimate": 3,
+        "segments_needing_estimate": 3,
+        "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+      },
+      "explanation": [
+        "Includes a waitlist on 1 segment(s).",
+        "Lowest Demo provider estimate on RAC/waitlist segments: 55%.",
+        "3 separate tickets.",
+        "Total fare INR 255.00 (every segment priced)."
+      ],
+      "booking_steps": [
+        "Ticket 1 of 3: train 90603, TIR → ERS, departing 20 Nov 2026 23:23 IST, class SL, General (GN) quota.",
+        "Ticket 2 of 3: train 90603, ERS → KYJ, departing 21 Nov 2026 02:57 IST, class SL, General (GN) quota.",
+        "Ticket 3 of 3: train 90603, KYJ → TVC, departing 21 Nov 2026 05:08 IST, class SL, General (GN) quota.",
+        "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at ERS, KYJ.",
+        "Check every ticket on an authorized booking platform before paying."
+      ],
+      "oldest_checked_at": "2026-11-08T10:00:00Z"
+    },
+    {
+      "rank": 11,
+      "train_number": "90603",
+      "train_name": "DEMO NIGHT MAIL",
+      "travel_class": "3A",
+      "travel_class_label": "AC 3 Tier",
+      "quota": "GN",
+      "train_start_date": "2026-11-20",
+      "segment_count": 3,
+      "status_tier": 2,
+      "status_tier_label": "Includes waitlist",
+      "segments": [
+        {
+          "sequence": 0,
+          "source": "TIR",
+          "source_name": "Tirur",
+          "destination": "SRR",
+          "destination_name": "Shoranur Junction",
+          "departure": "2026-11-20T23:23:00+05:30",
+          "arrival": "2026-11-21T00:19:00+05:30",
+          "provider_query_date": "2026-11-20",
+          "boards_on_later_date": false,
+          "status": "WAITLIST",
+          "availability_text": "WL 27",
+          "raw_status": "GNWL36/WL27",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 27,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "62% Chance",
+            "percentage": 62.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "105.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "5dc082c7-cd16-47f3-a54a-587fe6708488"
+        },
+        {
+          "sequence": 1,
+          "source": "SRR",
+          "source_name": "Shoranur Junction",
+          "destination": "QLN",
+          "destination_name": "Kollam Junction",
+          "departure": "2026-11-21T00:29:00+05:30",
+          "arrival": "2026-11-21T05:52:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "WAITLIST",
+          "availability_text": "WL 34",
+          "raw_status": "GNWL49/WL34",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 34,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "55% Chance",
+            "percentage": 55.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "392.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "15f261fc-2b12-4a1f-ace9-a6906dfa4c77"
+        },
+        {
+          "sequence": 2,
+          "source": "QLN",
+          "source_name": "Kollam Junction",
+          "destination": "TVC",
+          "destination_name": "Thiruvananthapuram Central",
+          "departure": "2026-11-21T05:57:00+05:30",
+          "arrival": "2026-11-21T07:18:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "AVAILABLE",
+          "availability_text": "AVL 36",
+          "raw_status": "AVAILABLE-0036",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": null,
+          "available_count": 36,
+          "can_book": true,
+          "prediction": null,
+          "fare": {
+            "amount": "134.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "7f9800ac-4d9d-4b2e-9378-a52f2c3138a8"
+        }
+      ],
+      "total_fare": {
+        "amount": "631.00",
+        "currency": "INR",
+        "basis": null
+      },
+      "fare_complete": true,
+      "prediction_summary": {
+        "kind": "MINIMUM_SEGMENT_ESTIMATE",
+        "minimum_percentage": 55.0,
+        "segments_with_estimate": 2,
+        "segments_needing_estimate": 2,
+        "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+      },
+      "explanation": [
+        "Includes a waitlist on 2 segment(s).",
+        "Lowest Demo provider estimate on RAC/waitlist segments: 55%.",
+        "3 separate tickets.",
+        "Total fare INR 631.00 (every segment priced)."
+      ],
+      "booking_steps": [
+        "Ticket 1 of 3: train 90603, TIR → SRR, departing 20 Nov 2026 23:23 IST, class 3A, General (GN) quota.",
+        "Ticket 2 of 3: train 90603, SRR → QLN, departing 21 Nov 2026 00:29 IST, class 3A, General (GN) quota.",
+        "Ticket 3 of 3: train 90603, QLN → TVC, departing 21 Nov 2026 05:57 IST, class 3A, General (GN) quota.",
+        "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at SRR, QLN.",
+        "Check every ticket on an authorized booking platform before paying."
+      ],
+      "oldest_checked_at": "2026-11-08T10:00:00Z"
+    },
+    {
+      "rank": 12,
+      "train_number": "90603",
+      "train_name": "DEMO NIGHT MAIL",
+      "travel_class": "SL",
+      "travel_class_label": "Sleeper",
+      "quota": "GN",
+      "train_start_date": "2026-11-20",
+      "segment_count": 2,
+      "status_tier": 2,
+      "status_tier_label": "Includes waitlist",
+      "segments": [
+        {
+          "sequence": 0,
+          "source": "TIR",
+          "source_name": "Tirur",
+          "destination": "QLN",
+          "destination_name": "Kollam Junction",
+          "departure": "2026-11-20T23:23:00+05:30",
+          "arrival": "2026-11-21T05:52:00+05:30",
+          "provider_query_date": "2026-11-20",
+          "boards_on_later_date": false,
+          "status": "WAITLIST",
+          "availability_text": "WL 36",
+          "raw_status": "GNWL74/WL36",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 36,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "52% Chance",
+            "percentage": 52.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "178.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "72cc5518-09aa-444e-aa7d-35bf090f741c"
+        },
+        {
+          "sequence": 1,
+          "source": "QLN",
+          "source_name": "Kollam Junction",
+          "destination": "TVC",
+          "destination_name": "Thiruvananthapuram Central",
+          "departure": "2026-11-21T05:57:00+05:30",
+          "arrival": "2026-11-21T07:18:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "AVAILABLE",
+          "availability_text": "AVL 9",
+          "raw_status": "AVAILABLE-0009",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": null,
+          "available_count": 9,
+          "can_book": true,
+          "prediction": null,
+          "fare": {
+            "amount": "56.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "937d6e51-2d1d-47a4-948a-1fa64a67ccd0"
+        }
+      ],
+      "total_fare": {
+        "amount": "234.00",
+        "currency": "INR",
+        "basis": null
+      },
+      "fare_complete": true,
+      "prediction_summary": {
+        "kind": "MINIMUM_SEGMENT_ESTIMATE",
+        "minimum_percentage": 52.0,
+        "segments_with_estimate": 1,
+        "segments_needing_estimate": 1,
+        "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+      },
+      "explanation": [
+        "Includes a waitlist on 1 segment(s).",
+        "Lowest Demo provider estimate on RAC/waitlist segments: 52%.",
+        "2 separate tickets.",
+        "Total fare INR 234.00 (every segment priced)."
+      ],
+      "booking_steps": [
+        "Ticket 1 of 2: train 90603, TIR → QLN, departing 20 Nov 2026 23:23 IST, class SL, General (GN) quota.",
+        "Ticket 2 of 2: train 90603, QLN → TVC, departing 21 Nov 2026 05:57 IST, class SL, General (GN) quota.",
+        "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at QLN.",
+        "Check every ticket on an authorized booking platform before paying."
+      ],
+      "oldest_checked_at": "2026-11-08T10:00:00Z"
+    },
+    {
+      "rank": 13,
+      "train_number": "90603",
+      "train_name": "DEMO NIGHT MAIL",
+      "travel_class": "3A",
+      "travel_class_label": "AC 3 Tier",
+      "quota": "GN",
+      "train_start_date": "2026-11-20",
+      "segment_count": 2,
+      "status_tier": 2,
+      "status_tier_label": "Includes waitlist",
+      "segments": [
+        {
+          "sequence": 0,
+          "source": "TIR",
+          "source_name": "Tirur",
+          "destination": "AWY",
+          "destination_name": "Aluva",
+          "departure": "2026-11-20T23:23:00+05:30",
+          "arrival": "2026-11-21T02:19:00+05:30",
+          "provider_query_date": "2026-11-20",
+          "boards_on_later_date": false,
+          "status": "WAITLIST",
+          "availability_text": "WL 19",
+          "raw_status": "GNWL25/WL19",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 19,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "71% Chance",
+            "percentage": 71.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "230.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "80931b3f-368f-48d3-8059-167efe68cd66"
+        },
+        {
+          "sequence": 1,
+          "source": "AWY",
+          "source_name": "Aluva",
+          "destination": "TVC",
+          "destination_name": "Thiruvananthapuram Central",
+          "departure": "2026-11-21T02:21:00+05:30",
+          "arrival": "2026-11-21T07:18:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "WAITLIST",
+          "availability_text": "WL 39",
+          "raw_status": "GNWL63/WL39",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 39,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "49% Chance",
+            "percentage": 49.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "362.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "7bffc94d-9787-4376-8ce5-527a31d0aa3a"
+        }
+      ],
+      "total_fare": {
+        "amount": "592.00",
+        "currency": "INR",
+        "basis": null
+      },
+      "fare_complete": true,
+      "prediction_summary": {
+        "kind": "MINIMUM_SEGMENT_ESTIMATE",
+        "minimum_percentage": 49.0,
+        "segments_with_estimate": 2,
+        "segments_needing_estimate": 2,
+        "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+      },
+      "explanation": [
+        "Includes a waitlist on 2 segment(s).",
+        "Lowest Demo provider estimate on RAC/waitlist segments: 49%.",
+        "2 separate tickets.",
+        "Total fare INR 592.00 (every segment priced)."
+      ],
+      "booking_steps": [
+        "Ticket 1 of 2: train 90603, TIR → AWY, departing 20 Nov 2026 23:23 IST, class 3A, General (GN) quota.",
+        "Ticket 2 of 2: train 90603, AWY → TVC, departing 21 Nov 2026 02:21 IST, class 3A, General (GN) quota.",
+        "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at AWY.",
+        "Check every ticket on an authorized booking platform before paying."
+      ],
+      "oldest_checked_at": "2026-11-08T10:00:00Z"
+    },
+    {
+      "rank": 14,
+      "train_number": "90603",
+      "train_name": "DEMO NIGHT MAIL",
+      "travel_class": "3A",
+      "travel_class_label": "AC 3 Tier",
+      "quota": "GN",
+      "train_start_date": "2026-11-20",
+      "segment_count": 3,
+      "status_tier": 2,
+      "status_tier_label": "Includes waitlist",
+      "segments": [
+        {
+          "sequence": 0,
+          "source": "TIR",
+          "source_name": "Tirur",
+          "destination": "SRR",
+          "destination_name": "Shoranur Junction",
+          "departure": "2026-11-20T23:23:00+05:30",
+          "arrival": "2026-11-21T00:19:00+05:30",
+          "provider_query_date": "2026-11-20",
+          "boards_on_later_date": false,
+          "status": "WAITLIST",
+          "availability_text": "WL 27",
+          "raw_status": "GNWL36/WL27",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 27,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "62% Chance",
+            "percentage": 62.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "105.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "5dc082c7-cd16-47f3-a54a-587fe6708488"
+        },
+        {
+          "sequence": 1,
+          "source": "SRR",
+          "source_name": "Shoranur Junction",
+          "destination": "AWY",
+          "destination_name": "Aluva",
+          "departure": "2026-11-21T00:29:00+05:30",
+          "arrival": "2026-11-21T02:19:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "AVAILABLE",
+          "availability_text": "AVL 29",
+          "raw_status": "AVAILABLE-0029",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": null,
+          "available_count": 29,
+          "can_book": true,
+          "prediction": null,
+          "fare": {
+            "amount": "165.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "5fe8ddbf-d5e2-4560-b945-e9e859a3d7b1"
+        },
+        {
+          "sequence": 2,
+          "source": "AWY",
+          "source_name": "Aluva",
+          "destination": "TVC",
+          "destination_name": "Thiruvananthapuram Central",
+          "departure": "2026-11-21T02:21:00+05:30",
+          "arrival": "2026-11-21T07:18:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "WAITLIST",
+          "availability_text": "WL 39",
+          "raw_status": "GNWL63/WL39",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 39,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "49% Chance",
+            "percentage": 49.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "362.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "7bffc94d-9787-4376-8ce5-527a31d0aa3a"
+        }
+      ],
+      "total_fare": {
+        "amount": "632.00",
+        "currency": "INR",
+        "basis": null
+      },
+      "fare_complete": true,
+      "prediction_summary": {
+        "kind": "MINIMUM_SEGMENT_ESTIMATE",
+        "minimum_percentage": 49.0,
+        "segments_with_estimate": 2,
+        "segments_needing_estimate": 2,
+        "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+      },
+      "explanation": [
+        "Includes a waitlist on 2 segment(s).",
+        "Lowest Demo provider estimate on RAC/waitlist segments: 49%.",
+        "3 separate tickets.",
+        "Total fare INR 632.00 (every segment priced)."
+      ],
+      "booking_steps": [
+        "Ticket 1 of 3: train 90603, TIR → SRR, departing 20 Nov 2026 23:23 IST, class 3A, General (GN) quota.",
+        "Ticket 2 of 3: train 90603, SRR → AWY, departing 21 Nov 2026 00:29 IST, class 3A, General (GN) quota.",
+        "Ticket 3 of 3: train 90603, AWY → TVC, departing 21 Nov 2026 02:21 IST, class 3A, General (GN) quota.",
+        "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at SRR, AWY.",
+        "Check every ticket on an authorized booking platform before paying."
+      ],
+      "oldest_checked_at": "2026-11-08T10:00:00Z"
+    },
+    {
+      "rank": 15,
+      "train_number": "90603",
+      "train_name": "DEMO NIGHT MAIL",
+      "travel_class": "3A",
+      "travel_class_label": "AC 3 Tier",
+      "quota": "GN",
+      "train_start_date": "2026-11-20",
+      "segment_count": 3,
+      "status_tier": 2,
+      "status_tier_label": "Includes waitlist",
+      "segments": [
+        {
+          "sequence": 0,
+          "source": "TIR",
+          "source_name": "Tirur",
+          "destination": "AWY",
+          "destination_name": "Aluva",
+          "departure": "2026-11-20T23:23:00+05:30",
+          "arrival": "2026-11-21T02:19:00+05:30",
+          "provider_query_date": "2026-11-20",
+          "boards_on_later_date": false,
+          "status": "WAITLIST",
+          "availability_text": "WL 19",
+          "raw_status": "GNWL25/WL19",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 19,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "71% Chance",
+            "percentage": 71.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "230.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "80931b3f-368f-48d3-8059-167efe68cd66"
+        },
+        {
+          "sequence": 1,
+          "source": "AWY",
+          "source_name": "Aluva",
+          "destination": "ERS",
+          "destination_name": "Ernakulam Junction",
+          "departure": "2026-11-21T02:21:00+05:30",
+          "arrival": "2026-11-21T02:47:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "RAC",
+          "availability_text": "RAC 18",
+          "raw_status": "RAC 18",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": 18,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "61% Chance",
+            "percentage": 61.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "70.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "883be794-8317-4806-92f3-5479aeffb788"
+        },
+        {
+          "sequence": 2,
+          "source": "ERS",
+          "source_name": "Ernakulam Junction",
+          "destination": "TVC",
+          "destination_name": "Thiruvananthapuram Central",
+          "departure": "2026-11-21T02:57:00+05:30",
+          "arrival": "2026-11-21T07:18:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "WAITLIST",
+          "availability_text": "WL 44",
+          "raw_status": "GNWL73/WL44",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 44,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "44% Chance",
+            "percentage": 44.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "331.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "b9750a50-86e8-479b-93f6-0aa5bfb0b506"
+        }
+      ],
+      "total_fare": {
+        "amount": "631.00",
+        "currency": "INR",
+        "basis": null
+      },
+      "fare_complete": true,
+      "prediction_summary": {
+        "kind": "MINIMUM_SEGMENT_ESTIMATE",
+        "minimum_percentage": 44.0,
+        "segments_with_estimate": 3,
+        "segments_needing_estimate": 3,
+        "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+      },
+      "explanation": [
+        "Includes a waitlist on 2 segment(s).",
+        "Lowest Demo provider estimate on RAC/waitlist segments: 44%.",
+        "3 separate tickets.",
+        "Total fare INR 631.00 (every segment priced)."
+      ],
+      "booking_steps": [
+        "Ticket 1 of 3: train 90603, TIR → AWY, departing 20 Nov 2026 23:23 IST, class 3A, General (GN) quota.",
+        "Ticket 2 of 3: train 90603, AWY → ERS, departing 21 Nov 2026 02:21 IST, class 3A, General (GN) quota.",
+        "Ticket 3 of 3: train 90603, ERS → TVC, departing 21 Nov 2026 02:57 IST, class 3A, General (GN) quota.",
+        "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at AWY, ERS.",
+        "Check every ticket on an authorized booking platform before paying."
+      ],
+      "oldest_checked_at": "2026-11-08T10:00:00Z"
+    },
+    {
+      "rank": 16,
+      "train_number": "90603",
+      "train_name": "DEMO NIGHT MAIL",
+      "travel_class": "3A",
+      "travel_class_label": "AC 3 Tier",
+      "quota": "GN",
+      "train_start_date": "2026-11-20",
+      "segment_count": 3,
+      "status_tier": 2,
+      "status_tier_label": "Includes waitlist",
+      "segments": [
+        {
+          "sequence": 0,
+          "source": "TIR",
+          "source_name": "Tirur",
+          "destination": "TCR",
+          "destination_name": "Thrissur",
+          "departure": "2026-11-20T23:23:00+05:30",
+          "arrival": "2026-11-21T01:10:00+05:30",
+          "provider_query_date": "2026-11-20",
+          "boards_on_later_date": false,
+          "status": "AVAILABLE",
+          "availability_text": "AVL 11",
+          "raw_status": "AVAILABLE-0011",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": null,
+          "available_count": 11,
+          "can_book": true,
+          "prediction": null,
+          "fare": {
+            "amount": "153.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "d7b82c07-21e0-442a-a0ab-325cb26b7782"
+        },
+        {
+          "sequence": 1,
+          "source": "TCR",
+          "source_name": "Thrissur",
+          "destination": "ERS",
+          "destination_name": "Ernakulam Junction",
+          "departure": "2026-11-21T01:13:00+05:30",
+          "arrival": "2026-11-21T02:47:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "WAITLIST",
+          "availability_text": "WL 26",
+          "raw_status": "GNWL37/WL26",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 26,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "63% Chance",
+            "percentage": 63.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "147.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "07650bf4-ddf5-4fe0-9661-0c9c636b8fbd"
+        },
+        {
+          "sequence": 2,
+          "source": "ERS",
+          "source_name": "Ernakulam Junction",
+          "destination": "TVC",
+          "destination_name": "Thiruvananthapuram Central",
+          "departure": "2026-11-21T02:57:00+05:30",
+          "arrival": "2026-11-21T07:18:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "WAITLIST",
+          "availability_text": "WL 44",
+          "raw_status": "GNWL73/WL44",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 44,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "44% Chance",
+            "percentage": 44.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "331.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "b9750a50-86e8-479b-93f6-0aa5bfb0b506"
+        }
+      ],
+      "total_fare": {
+        "amount": "631.00",
+        "currency": "INR",
+        "basis": null
+      },
+      "fare_complete": true,
+      "prediction_summary": {
+        "kind": "MINIMUM_SEGMENT_ESTIMATE",
+        "minimum_percentage": 44.0,
+        "segments_with_estimate": 2,
+        "segments_needing_estimate": 2,
+        "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+      },
+      "explanation": [
+        "Includes a waitlist on 2 segment(s).",
+        "Lowest Demo provider estimate on RAC/waitlist segments: 44%.",
+        "3 separate tickets.",
+        "Total fare INR 631.00 (every segment priced)."
+      ],
+      "booking_steps": [
+        "Ticket 1 of 3: train 90603, TIR → TCR, departing 20 Nov 2026 23:23 IST, class 3A, General (GN) quota.",
+        "Ticket 2 of 3: train 90603, TCR → ERS, departing 21 Nov 2026 01:13 IST, class 3A, General (GN) quota.",
+        "Ticket 3 of 3: train 90603, ERS → TVC, departing 21 Nov 2026 02:57 IST, class 3A, General (GN) quota.",
+        "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at TCR, ERS.",
+        "Check every ticket on an authorized booking platform before paying."
+      ],
+      "oldest_checked_at": "2026-11-08T10:00:00Z"
+    },
+    {
+      "rank": 17,
+      "train_number": "90603",
+      "train_name": "DEMO NIGHT MAIL",
+      "travel_class": "3A",
+      "travel_class_label": "AC 3 Tier",
+      "quota": "GN",
+      "train_start_date": "2026-11-20",
+      "segment_count": 4,
+      "status_tier": 2,
+      "status_tier_label": "Includes waitlist",
+      "segments": [
+        {
+          "sequence": 0,
+          "source": "TIR",
+          "source_name": "Tirur",
+          "destination": "SRR",
+          "destination_name": "Shoranur Junction",
+          "departure": "2026-11-20T23:23:00+05:30",
+          "arrival": "2026-11-21T00:19:00+05:30",
+          "provider_query_date": "2026-11-20",
+          "boards_on_later_date": false,
+          "status": "WAITLIST",
+          "availability_text": "WL 27",
+          "raw_status": "GNWL36/WL27",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 27,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "62% Chance",
+            "percentage": 62.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "105.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "5dc082c7-cd16-47f3-a54a-587fe6708488"
+        },
+        {
+          "sequence": 1,
+          "source": "SRR",
+          "source_name": "Shoranur Junction",
+          "destination": "AWY",
+          "destination_name": "Aluva",
+          "departure": "2026-11-21T00:29:00+05:30",
+          "arrival": "2026-11-21T02:19:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "AVAILABLE",
+          "availability_text": "AVL 29",
+          "raw_status": "AVAILABLE-0029",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": null,
+          "available_count": 29,
+          "can_book": true,
+          "prediction": null,
+          "fare": {
+            "amount": "165.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "5fe8ddbf-d5e2-4560-b945-e9e859a3d7b1"
+        },
+        {
+          "sequence": 2,
+          "source": "AWY",
+          "source_name": "Aluva",
+          "destination": "ERS",
+          "destination_name": "Ernakulam Junction",
+          "departure": "2026-11-21T02:21:00+05:30",
+          "arrival": "2026-11-21T02:47:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "RAC",
+          "availability_text": "RAC 18",
+          "raw_status": "RAC 18",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": 18,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "61% Chance",
+            "percentage": 61.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "70.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "883be794-8317-4806-92f3-5479aeffb788"
+        },
+        {
+          "sequence": 3,
+          "source": "ERS",
+          "source_name": "Ernakulam Junction",
+          "destination": "TVC",
+          "destination_name": "Thiruvananthapuram Central",
+          "departure": "2026-11-21T02:57:00+05:30",
+          "arrival": "2026-11-21T07:18:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "WAITLIST",
+          "availability_text": "WL 44",
+          "raw_status": "GNWL73/WL44",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 44,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "44% Chance",
+            "percentage": 44.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "331.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "b9750a50-86e8-479b-93f6-0aa5bfb0b506"
+        }
+      ],
+      "total_fare": {
+        "amount": "671.00",
+        "currency": "INR",
+        "basis": null
+      },
+      "fare_complete": true,
+      "prediction_summary": {
+        "kind": "MINIMUM_SEGMENT_ESTIMATE",
+        "minimum_percentage": 44.0,
+        "segments_with_estimate": 3,
+        "segments_needing_estimate": 3,
+        "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+      },
+      "explanation": [
+        "Includes a waitlist on 2 segment(s).",
+        "Lowest Demo provider estimate on RAC/waitlist segments: 44%.",
+        "4 separate tickets.",
+        "Total fare INR 671.00 (every segment priced)."
+      ],
+      "booking_steps": [
+        "Ticket 1 of 4: train 90603, TIR → SRR, departing 20 Nov 2026 23:23 IST, class 3A, General (GN) quota.",
+        "Ticket 2 of 4: train 90603, SRR → AWY, departing 21 Nov 2026 00:29 IST, class 3A, General (GN) quota.",
+        "Ticket 3 of 4: train 90603, AWY → ERS, departing 21 Nov 2026 02:21 IST, class 3A, General (GN) quota.",
+        "Ticket 4 of 4: train 90603, ERS → TVC, departing 21 Nov 2026 02:57 IST, class 3A, General (GN) quota.",
+        "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at SRR, AWY, ERS.",
+        "Check every ticket on an authorized booking platform before paying."
+      ],
+      "oldest_checked_at": "2026-11-08T10:00:00Z"
+    },
+    {
+      "rank": 18,
+      "train_number": "90601",
+      "train_name": "DEMO COASTAL EXPRESS",
+      "travel_class": "3A",
+      "travel_class_label": "AC 3 Tier",
+      "quota": "GN",
+      "train_start_date": "2026-11-20",
+      "segment_count": 1,
+      "status_tier": 2,
+      "status_tier_label": "Includes waitlist",
+      "segments": [
+        {
+          "sequence": 0,
+          "source": "TIR",
+          "source_name": "Tirur",
+          "destination": "TVC",
+          "destination_name": "Thiruvananthapuram Central",
+          "departure": "2026-11-20T22:04:00+05:30",
+          "arrival": "2026-11-21T05:58:00+05:30",
+          "provider_query_date": "2026-11-20",
+          "boards_on_later_date": false,
+          "status": "WAITLIST",
+          "availability_text": "WL 27",
+          "raw_status": "GNWL42/WL27",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 27,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "38% Chance",
+            "percentage": 38.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "584.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "30274f22-9ae1-419c-b8b5-6f513c3c6105"
+        }
+      ],
+      "total_fare": {
+        "amount": "584.00",
+        "currency": "INR",
+        "basis": null
+      },
+      "fare_complete": true,
+      "prediction_summary": {
+        "kind": "MINIMUM_SEGMENT_ESTIMATE",
+        "minimum_percentage": 38.0,
+        "segments_with_estimate": 1,
+        "segments_needing_estimate": 1,
+        "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+      },
+      "explanation": [
+        "Includes a waitlist on 1 segment(s).",
+        "Lowest Demo provider estimate on RAC/waitlist segments: 38%.",
+        "Direct: one ticket.",
+        "Total fare INR 584.00 (every segment priced)."
+      ],
+      "booking_steps": [
+        "Ticket 1 of 1: train 90601, TIR → TVC, departing 20 Nov 2026 22:04 IST, class 3A, General (GN) quota.",
+        "Check every ticket on an authorized booking platform before paying."
+      ],
+      "oldest_checked_at": "2026-11-08T10:00:00Z"
+    },
+    {
+      "rank": 19,
+      "train_number": "90603",
+      "train_name": "DEMO NIGHT MAIL",
+      "travel_class": "3A",
+      "travel_class_label": "AC 3 Tier",
+      "quota": "GN",
+      "train_start_date": "2026-11-20",
+      "segment_count": 2,
+      "status_tier": 2,
+      "status_tier_label": "Includes waitlist",
+      "segments": [
+        {
+          "sequence": 0,
+          "source": "TIR",
+          "source_name": "Tirur",
+          "destination": "ALLP",
+          "destination_name": "Alappuzha",
+          "departure": "2026-11-20T23:23:00+05:30",
+          "arrival": "2026-11-21T04:08:00+05:30",
+          "provider_query_date": "2026-11-20",
+          "boards_on_later_date": false,
+          "status": "WAITLIST",
+          "availability_text": "WL 11",
+          "raw_status": "GNWL22/WL11",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 11,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "80% Chance",
+            "percentage": 80.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "343.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "f63921d7-59c2-4afd-b509-41cdd2be1699"
+        },
+        {
+          "sequence": 1,
+          "source": "ALLP",
+          "source_name": "Alappuzha",
+          "destination": "TVC",
+          "destination_name": "Thiruvananthapuram Central",
+          "departure": "2026-11-21T04:11:00+05:30",
+          "arrival": "2026-11-21T07:18:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "WAITLIST",
+          "availability_text": "WL 49",
+          "raw_status": "GNWL79/WL49",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 49,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "38% Chance",
+            "percentage": 38.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "249.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "1f3a2572-c10e-456e-8587-e6a8b88a8e9d"
+        }
+      ],
+      "total_fare": {
+        "amount": "592.00",
+        "currency": "INR",
+        "basis": null
+      },
+      "fare_complete": true,
+      "prediction_summary": {
+        "kind": "MINIMUM_SEGMENT_ESTIMATE",
+        "minimum_percentage": 38.0,
+        "segments_with_estimate": 2,
+        "segments_needing_estimate": 2,
+        "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+      },
+      "explanation": [
+        "Includes a waitlist on 2 segment(s).",
+        "Lowest Demo provider estimate on RAC/waitlist segments: 38%.",
+        "2 separate tickets.",
+        "Total fare INR 592.00 (every segment priced)."
+      ],
+      "booking_steps": [
+        "Ticket 1 of 2: train 90603, TIR → ALLP, departing 20 Nov 2026 23:23 IST, class 3A, General (GN) quota.",
+        "Ticket 2 of 2: train 90603, ALLP → TVC, departing 21 Nov 2026 04:11 IST, class 3A, General (GN) quota.",
+        "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at ALLP.",
+        "Check every ticket on an authorized booking platform before paying."
+      ],
+      "oldest_checked_at": "2026-11-08T10:00:00Z"
+    },
+    {
+      "rank": 20,
+      "train_number": "90603",
+      "train_name": "DEMO NIGHT MAIL",
+      "travel_class": "3A",
+      "travel_class_label": "AC 3 Tier",
+      "quota": "GN",
+      "train_start_date": "2026-11-20",
+      "segment_count": 4,
+      "status_tier": 2,
+      "status_tier_label": "Includes waitlist",
+      "segments": [
+        {
+          "sequence": 0,
+          "source": "TIR",
+          "source_name": "Tirur",
+          "destination": "AWY",
+          "destination_name": "Aluva",
+          "departure": "2026-11-20T23:23:00+05:30",
+          "arrival": "2026-11-21T02:19:00+05:30",
+          "provider_query_date": "2026-11-20",
+          "boards_on_later_date": false,
+          "status": "WAITLIST",
+          "availability_text": "WL 19",
+          "raw_status": "GNWL25/WL19",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 19,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "71% Chance",
+            "percentage": 71.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "230.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "80931b3f-368f-48d3-8059-167efe68cd66"
+        },
+        {
+          "sequence": 1,
+          "source": "AWY",
+          "source_name": "Aluva",
+          "destination": "ERS",
+          "destination_name": "Ernakulam Junction",
+          "departure": "2026-11-21T02:21:00+05:30",
+          "arrival": "2026-11-21T02:47:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "RAC",
+          "availability_text": "RAC 18",
+          "raw_status": "RAC 18",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": 18,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "61% Chance",
+            "percentage": 61.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "70.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "883be794-8317-4806-92f3-5479aeffb788"
+        },
+        {
+          "sequence": 2,
+          "source": "ERS",
+          "source_name": "Ernakulam Junction",
+          "destination": "ALLP",
+          "destination_name": "Alappuzha",
+          "departure": "2026-11-21T02:57:00+05:30",
+          "arrival": "2026-11-21T04:08:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "RAC",
+          "availability_text": "RAC 20",
+          "raw_status": "RAC 20",
+          "waitlist_type": null,
+          "waitlist_number": null,
+          "rac_number": 20,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "57% Chance",
+            "percentage": 57.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "123.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "186d6653-e995-40d9-912f-1ea0a1483f78"
+        },
+        {
+          "sequence": 3,
+          "source": "ALLP",
+          "source_name": "Alappuzha",
+          "destination": "TVC",
+          "destination_name": "Thiruvananthapuram Central",
+          "departure": "2026-11-21T04:11:00+05:30",
+          "arrival": "2026-11-21T07:18:00+05:30",
+          "provider_query_date": "2026-11-21",
+          "boards_on_later_date": true,
+          "status": "WAITLIST",
+          "availability_text": "WL 49",
+          "raw_status": "GNWL79/WL49",
+          "waitlist_type": "GNWL",
+          "waitlist_number": 49,
+          "rac_number": null,
+          "available_count": null,
+          "can_book": true,
+          "prediction": {
+            "provider": "MOCK",
+            "label": "Demo estimate",
+            "text": "38% Chance",
+            "percentage": 38.0,
+            "percentage_source": "FIELD"
+          },
+          "fare": {
+            "amount": "249.00",
+            "currency": "INR",
+            "basis": "MOCK_DISTANCE_FARE"
+          },
+          "checked_at": "2026-11-08T10:00:00Z",
+          "cached": false,
+          "observation_id": "1f3a2572-c10e-456e-8587-e6a8b88a8e9d"
+        }
+      ],
+      "total_fare": {
+        "amount": "672.00",
+        "currency": "INR",
+        "basis": null
+      },
+      "fare_complete": true,
+      "prediction_summary": {
+        "kind": "MINIMUM_SEGMENT_ESTIMATE",
+        "minimum_percentage": 38.0,
+        "segments_with_estimate": 4,
+        "segments_needing_estimate": 4,
+        "note": "Lowest provider estimate among RAC/waitlist segments. It is not a probability that the whole journey will be confirmed."
+      },
+      "explanation": [
+        "Includes a waitlist on 2 segment(s).",
+        "Lowest Demo provider estimate on RAC/waitlist segments: 38%.",
+        "4 separate tickets.",
+        "Total fare INR 672.00 (every segment priced)."
+      ],
+      "booking_steps": [
+        "Ticket 1 of 4: train 90603, TIR → AWY, departing 20 Nov 2026 23:23 IST, class 3A, General (GN) quota.",
+        "Ticket 2 of 4: train 90603, AWY → ERS, departing 21 Nov 2026 02:21 IST, class 3A, General (GN) quota.",
+        "Ticket 3 of 4: train 90603, ERS → ALLP, departing 21 Nov 2026 02:57 IST, class 3A, General (GN) quota.",
+        "Ticket 4 of 4: train 90603, ALLP → TVC, departing 21 Nov 2026 04:11 IST, class 3A, General (GN) quota.",
+        "Book each ticket separately; each may get its own PNR, coach and berth. You may need to change seats at AWY, ERS, ALLP.",
+        "Check every ticket on an authorized booking platform before paying."
+      ],
+      "oldest_checked_at": "2026-11-08T10:00:00Z"
+    }
+  ],
+  "warnings": [
+    "Demo mode: trains and availability are simulated mock data, not live railway information.",
+    "The per-search availability request budget was used up before every candidate segment could be checked.",
+    "Some segments board after midnight. The date used for those availability checks follows the rule the provider is believed to use; this has not yet been confirmed with the provider.",
+    "Each segment is a separate reservation and may create a separate PNR.",
+    "Availability can change before you book. Booking one segment does not reserve the others.",
+    "Each ticket may get a different coach, berth or status; you may have to change seats where one segment ends and the next begins.",
+    "Availability is checked for a single-passenger ticket and does not guarantee seats for a group.",
+    "A segment can be bookable while waitlisted; bookable does not mean confirmed.",
+    "Predictions are RailKit's own estimates, not guarantees, and never change the current status.",
+    "Separate tickets are not a through ticket and do not grant break-of-journey rights.",
+    "Verify every segment on an authorized booking platform before paying.",
+    "RailRoute is independent and is not affiliated with Indian Railways or IRCTC."
+  ],
+  "error": null,
+  "stale_after_seconds": 300,
+  "created_at": "2026-11-08T10:00:00Z",
+  "started_at": "2026-11-08T10:00:00Z",
+  "completed_at": "2026-11-08T10:00:00Z"
+}
