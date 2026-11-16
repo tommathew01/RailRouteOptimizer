@@ -11,11 +11,49 @@ from app.api.deps import ContainerDep, lookup_rate_limit, search_rate_limit
 from app.core.errors import NotFoundError
 from app.domain.enums import SearchStatus
 from app.schemas.common import ERROR_RESPONSES
-from app.schemas.journeys import JourneySearchResponse, OptimizeRequest, SearchAccepted
+from app.schemas.journeys import (
+    JourneySearchResponse,
+    OptimizeRequest,
+    SearchAccepted,
+    SearchPlanResponse,
+)
 from app.services.journey_search import JourneySearchService
-from app.services.results import status_url
+from app.services.results import plan_response, status_url
+from app.services.search_state import JourneyRequest
 
 router = APIRouter(tags=["journeys"])
+
+
+def _prepare(body: OptimizeRequest, container: ContainerDep) -> JourneyRequest:
+    return container.journeys.prepare(
+        source=body.source,
+        destination=body.destination,
+        journey_date=body.journey_date,
+        classes=body.classes,
+        allow_rac=body.filters.allow_rac,
+        allow_waitlist=body.filters.allow_waitlist,
+        max_segments=body.max_segments,
+        train_numbers=body.train_numbers,
+        client_quota=body.quota,
+        quotas=list(body.quotas),
+    )
+
+
+@router.post(
+    "/journeys/preview",
+    response_model=SearchPlanResponse,
+    responses=ERROR_RESPONSES,
+    dependencies=[lookup_rate_limit],
+    summary="Combinations a search would check now and how the budget would be shared",
+)
+async def preview(body: OptimizeRequest, container: ContainerDep) -> SearchPlanResponse:
+    """Same validation as ``/journeys/optimize``; never makes an availability request."""
+    ctx = await container.journeys.preview(_prepare(body, container))
+    return plan_response(
+        ctx,
+        data_mode=container.data_mode,
+        provider_quotas=container.eligibility.supported_quotas,
+    )
 
 
 @router.post(
@@ -30,19 +68,7 @@ router = APIRouter(tags=["journeys"])
     summary="Find same-train segment combinations (1-4 separate tickets)",
 )
 async def optimize(body: OptimizeRequest, container: ContainerDep) -> JSONResponse:
-    request = container.journeys.prepare(
-        source=body.source,
-        destination=body.destination,
-        journey_date=body.journey_date,
-        classes=body.classes,
-        allow_rac=body.filters.allow_rac,
-        allow_waitlist=body.filters.allow_waitlist,
-        max_segments=body.max_segments,
-        train_numbers=body.train_numbers,
-        client_quota=body.quota,
-        quotas=list(body.quotas),
-    )
-    record = await container.journeys.submit(request)
+    record = await container.journeys.submit(_prepare(body, container))
     if record.status in (SearchStatus.COMPLETED, SearchStatus.FAILED):
         response = JourneySearchService.response_for(record)
         return JSONResponse(response.model_dump(mode="json"), status_code=200)

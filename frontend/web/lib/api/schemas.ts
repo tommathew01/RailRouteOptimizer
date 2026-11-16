@@ -92,9 +92,12 @@ export const MetaSchema = z.object({
   quota: z.object({ code: z.literal("GN"), label: z.string(), editable: z.boolean() }),
   quotas: z.array(QuotaOptionSchema).default([]),
   supported_classes: z.array(ClassOptionSchema),
+  /** Enforced by the server; the client only mirrors them (never hard-code a second copy). */
   limits: z.object({
     max_segments: z.number().int(),
     max_trains_per_search: z.number().int(),
+    default_trains_selected: z.number().int(),
+    max_classes_per_search: z.number().int(),
     max_availability_requests_per_search: z.number().int(),
     max_advance_booking_days: z.number().int(),
   }),
@@ -263,6 +266,7 @@ export const ClassEvaluationSchema = z.object({
     "NOT_QUERIED",
   ]),
   queried: z.boolean().default(true),
+  segments_queried: z.number().int().default(0),
   depth_reached: z.number().int(),
   best_status_tier: z.number().int().nullable(),
   recommendations: z.number().int(),
@@ -315,8 +319,13 @@ export const JourneySearchSchema = z.object({
       trains_evaluated: z.number().int(),
       combinations_evaluated: z.number().int(),
       combinations_not_queried: z.number().int().default(0),
+      combinations_not_reached: z.number().int().default(0),
       availability_requests_planned: z.number().int(),
+      /** Provider attempts charged to the budget, retries included. */
       availability_requests_made: z.number().int(),
+      availability_checks_made: z.number().int().default(0),
+      availability_retries: z.number().int().default(0),
+      availability_retries_refused: z.number().int().default(0),
       request_budget: z.number().int(),
       cache_hits: z.number().int(),
       segments_checked: z.number().int(),
@@ -333,6 +342,42 @@ export const JourneySearchSchema = z.object({
   created_at: z.string(),
   started_at: z.string().nullable(),
   completed_at: z.string().nullable(),
+});
+
+// --- Search preview (what a search started now would check; no availability request) -------
+export const SearchPlanSchema = z.object({
+  data_mode: DataModeSchema,
+  request_budget: z.number().int(),
+  max_segments: z.number().int(),
+  trains_selected: z.number().int(),
+  trains_evaluated: z.number().int(),
+  combinations: z.number().int(),
+  combinations_not_queried: z.number().int(),
+  classes_not_offered: z.number().int(),
+  requests_per_combination: z.number().nullable(),
+  covers_direct_checks: z.boolean(),
+  planned: z.array(
+    z.object({ train_number: z.string(), travel_class: z.string(), quota: QuotaCodeSchema }),
+  ),
+  quotas: z.array(
+    z.object({
+      quota: QuotaCodeSchema,
+      quota_label: z.string(),
+      combinations: z.number().int(),
+      combinations_not_queried: z.number().int(),
+      next_opening_at: z.string().nullable(),
+      notes: z.array(z.string()),
+    }),
+  ),
+  trains: z.array(
+    z.object({
+      train_number: z.string(),
+      train_name: z.string().nullable(),
+      evaluation: z.string(),
+      combinations: z.number().int(),
+    }),
+  ),
+  explanation: z.array(z.string()),
 });
 
 export const SearchAcceptedSchema = z.object({
@@ -359,3 +404,4 @@ export type Segment = z.infer<typeof SegmentSchema>;
 export type Recommendation = z.infer<typeof RecommendationSchema>;
 export type TrainEvaluation = z.infer<typeof TrainEvaluationSchema>;
 export type JourneySearch = z.infer<typeof JourneySearchSchema>;
+export type SearchPlan = z.infer<typeof SearchPlanSchema>;

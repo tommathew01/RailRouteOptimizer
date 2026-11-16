@@ -85,14 +85,22 @@ raise provider spend beyond the configured guard.
 
 | Control | Scope | Behaviour when hit |
 |---|---|---|
-| `SEARCH_MAX_AVAILABILITY_REQUESTS` | one search | Search finishes `PARTIAL_BUDGET` with what it found |
+| `SEARCH_MAX_AVAILABILITY_REQUESTS` | one search: provider attempts, **retries included** (D-28) | Search finishes `PARTIAL_BUDGET` with what it found; a failed check that cannot be retried within it stays "not checked" |
+| `SEARCH_MAX_TRAINS` / `SEARCH_MAX_CLASSES` | one search | `400 TOO_MANY_TRAINS` / `TOO_MANY_CLASSES` before any provider call (never truncated) |
 | `PROVIDER_WINDOW_REQUEST_LIMIT` / `PROVIDER_WINDOW_SECONDS` | all replicas (Redis) | Calls refused before reaching RailKit; searches end `PARTIAL_BUDGET / PROVIDER_QUOTA_GUARD_REACHED` |
 | `PROVIDER_MONTHLY_REQUEST_LIMIT` | all replicas, IST calendar month | Same as above. Your RailKit billing cycle may differ: keep headroom |
 | RailKit 429 | all replicas | Shared back-off for `Retry-After` or `PROVIDER_RATE_LIMIT_BACKOFF_SECONDS` |
 | Redis unavailable | — | Provider calls **fail closed** (no unmetered spending) |
 
-Every HTTP attempt counts, including retries (`RAILKIT_MAX_RETRIES`, timeouts/5xx only). Current
-usage: `GET /api/v1/ops/provider-quota` with `Authorization: Bearer $METRICS_TOKEN`.
+Every HTTP attempt counts against the guard, including retries (`RAILKIT_MAX_RETRIES`,
+timeouts/5xx only); during a search each retry is also paid from that search's budget. Worst case
+per search: 1 train search + `SEARCH_MAX_TRAINS` routes + `SEARCH_MAX_AVAILABILITY_REQUESTS`
+availability attempts. Current usage: `GET /api/v1/ops/provider-quota` with
+`Authorization: Bearer $METRICS_TOKEN`.
+
+Docker and `make backend` read the same root `.env`; the Compose backend forwards every
+application setting (docs/08 D-30). After changing `.env` or code, recreate the stack with
+`docker compose --profile app up -d --build`.
 
 ## 6. Observability
 
@@ -102,8 +110,11 @@ usage: `GET /api/v1/ops/provider-quota` with `Authorization: Bearer $METRICS_TOK
   `railroute_provider_latency_seconds`, `railroute_provider_quota_refusals_total{reason}`,
   `railroute_cache_lookups_total{kind,result}`, `railroute_provider_malformed_responses_total`,
   `railroute_searches_total{completeness}`, `railroute_search_duration_seconds`,
-  `railroute_search_recommendations`, `railroute_search_availability_requests`,
-  `railroute_prediction_coverage_ratio`, `railroute_active_searches`.
+  `railroute_search_recommendations`, `railroute_search_availability_requests` (attempts per
+  search, retries included), `railroute_search_availability_retries_total{result=made|refused}`,
+  `railroute_search_combinations_not_reached`, `railroute_prediction_coverage_ratio`,
+  `railroute_active_searches`. A non-zero `combinations_not_reached` means users select more
+  combinations than the budget covers.
 
 Suggested alerts: 429 or `AUTH` outcomes > 0 in 5 min; quota refusals > 0; malformed responses
 > 0 (contract drift); `PARTIAL_*` share > 50 % over an hour; `/health/ready` failing.

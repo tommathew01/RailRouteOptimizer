@@ -69,6 +69,8 @@ async def meta(container: ContainerDep) -> MetaResponse:
         limits=SearchLimits(
             max_segments=settings.max_segments,
             max_trains_per_search=settings.search_max_trains,
+            default_trains_selected=settings.search_default_trains,
+            max_classes_per_search=settings.max_classes_per_search,
             max_availability_requests_per_search=settings.search_max_availability_requests,
             max_advance_booking_days=settings.max_advance_booking_days,
         ),

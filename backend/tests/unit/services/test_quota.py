@@ -87,3 +87,46 @@ async def test_search_budget() -> None:
     assert budget.remaining == 0
     await budget.refund()
     assert budget.remaining == 1
+
+
+async def test_budgeted_call_reserves_first_attempt_and_settles_to_attempts_made() -> None:
+    budget = SearchBudget(3)
+    call = await budget.start_call()
+    assert call is not None
+    assert budget.used == 1
+    call.attempt_started()
+    assert await call.allow_retry()  # reserves a second unit
+    call.attempt_started()
+    assert budget.used == 2
+    assert await call.settle(reached_provider=True) == 2
+    assert await call.settle(reached_provider=True) == 2  # idempotent
+    assert (budget.used, budget.checks, budget.attempts, budget.retries) == (2, 1, 2, 1)
+
+
+async def test_unused_reservations_are_returned_and_a_spent_budget_refuses() -> None:
+    budget = SearchBudget(2)
+    call = await budget.start_call()
+    assert call is not None
+    assert await call.allow_retry()
+    call.attempt_started()  # the retry was then refused by the global guard
+    await call.settle(reached_provider=True)
+    assert (budget.used, budget.attempts) == (1, 1)
+    refused = await budget.start_call()
+    assert refused is not None
+    await refused.settle(reached_provider=False)  # guard refused the first attempt
+    assert (budget.used, budget.checks) == (1, 1)
+    assert await budget.start_call() is not None
+    assert await budget.start_call() is None
+    assert budget.remaining == 0
+
+
+async def test_unreported_extra_attempts_are_still_charged() -> None:
+    """An adapter that retried without asking: accuracy wins over the limit."""
+    budget = SearchBudget(1)
+    call = await budget.start_call()
+    assert call is not None
+    for _ in range(3):
+        call.attempt_started()
+    await call.settle(reached_provider=True)
+    assert (budget.used, budget.attempts, budget.retries) == (3, 3, 2)
+    assert budget.remaining == 0

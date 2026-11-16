@@ -12,7 +12,7 @@ from app.domain.enums import Quota
 from app.domain.models import AvailabilityQuery
 from app.integrations.railkit.client import RailKitHttpClient
 from app.integrations.railkit.provider import RailKitProvider
-from app.providers.base import ProviderRequestEvent
+from app.providers.base import ProviderRequestEvent, call_gate
 from app.providers.errors import (
     ProviderAuthError,
     ProviderInvalidResponseError,
@@ -166,6 +166,61 @@ async def test_quota_guard_also_blocks_retries() -> None:
     with pytest.raises(ProviderQuotaExhaustedError):
         await make_client(router, RecordingObserver(block_after=1), retries=3).get_data("x", "/x")
     assert len(router.requests) == 1
+
+
+class Gate:
+    """A per-call gate (D-28) that allows ``retries`` retries and records every attempt."""
+
+    def __init__(self, retries: int) -> None:
+        self.retries = retries
+        self.attempts = 0
+        self.asked = 0
+
+    def attempt_started(self) -> None:
+        self.attempts += 1
+
+    async def allow_retry(self) -> bool:
+        self.asked += 1
+        if self.retries <= 0:
+            return False
+        self.retries -= 1
+        return True
+
+
+async def test_every_attempt_is_reported_to_the_call_gate() -> None:
+    router = Router(
+        json_response(503, {"success": False, "error": "busy"}),
+        json_response(200, {"success": True, "data": {"ok": 1}}),
+    )
+    gate = Gate(retries=1)
+    with call_gate(gate):
+        assert await make_client(router, retries=3).get_data("x", "/x") == {"ok": 1}
+    assert (gate.attempts, gate.asked, len(router.requests)) == (2, 1, 2)
+
+
+async def test_a_refused_retry_ends_the_call_with_its_real_error() -> None:
+    router = Router(json_response(503, {"success": False, "error": "busy"}))
+    observer = RecordingObserver()
+    gate = Gate(retries=0)
+    with call_gate(gate), pytest.raises(ProviderUpstreamError, match="busy"):
+        await make_client(router, observer, retries=3).get_data("x", "/x")
+    assert (gate.attempts, gate.asked, len(router.requests), observer.before_calls) == (1, 1, 1, 1)
+
+
+async def test_non_retryable_errors_never_ask_the_gate() -> None:
+    router = Router(json_response(400, {"success": False, "error": "bad"}))
+    gate = Gate(retries=5)
+    with call_gate(gate), pytest.raises(ProviderRejectedError):
+        await make_client(router, retries=3).get_data("x", "/x")
+    assert (gate.attempts, gate.asked) == (1, 0)
+
+
+async def test_guard_refusal_is_not_reported_as_an_attempt() -> None:
+    router = Router(json_response(200, {"success": True, "data": 1}))
+    gate = Gate(retries=5)
+    with call_gate(gate), pytest.raises(ProviderQuotaExhaustedError):
+        await make_client(router, RecordingObserver(block_after=0)).get_data("x", "/x")
+    assert gate.attempts == 0
 
 
 async def test_api_key_never_logged(caplog: pytest.LogCaptureFixture) -> None:

@@ -291,3 +291,45 @@ All changes are additive; a General-only client sees the same behaviour as befor
 | `PROVIDER_UNSUPPORTED` | no | The provider does not support this quota (e.g. Tatkal disabled via `RAILKIT_SUPPORTED_QUOTAS`). |
 
 Not-queried quotas are never re-queried automatically; the client searches again after `opens_at`.
+
+## 10. Budget accounting, limits and search preview (docs/08 D-27…D-30)
+
+All additions have defaults, so stored snapshots and older clients keep working.
+
+| Where | Field | Meaning |
+|---|---|---|
+| `POST /journeys/optimize`, `/journeys/preview` | `classes` (≤ `limits.max_classes_per_search`, default 3), `train_numbers` (≤ `limits.max_trains_per_search`, default 5) | Above a limit: `400 TOO_MANY_CLASSES` / `TOO_MANY_TRAINS` with `details.max_*`, before any provider call. Selections are never truncated. |
+| Search result | `coverage.availability_requests_made` | Provider availability **attempts** charged to the budget, retries included. |
+| Search result | `coverage.availability_checks_made`, `availability_retries`, `availability_retries_refused` | Logical checks sent to the provider (cache hits excluded); retry attempts included above; failed checks not retried because the budget was used up (they stay "not checked"). |
+| Search result | `coverage.request_budget` | `SEARCH_MAX_AVAILABILITY_REQUESTS`: attempts allowed per search. |
+| Search result | `coverage.combinations_not_reached` | Queryable combinations that got no check at all (budget/deadline/provider stop). `0` whenever the budget covers every direct check. |
+| Search result | `trains[].classes[].segments_queried` | Segment answers for that combination (cache hits included). |
+| `GET /meta` | `limits.default_trains_selected`, `limits.max_classes_per_search` | Mirrored by the UI; the server stays authoritative. |
+
+`POST /api/v1/journeys/preview` takes the optimize request body and returns what a search started
+now would check — with **no** availability request (it loads only the selected trains' routes,
+which the search needs anyway). Same validation and errors as optimize.
+
+```json
+{
+  "data_mode": "LIVE",
+  "request_budget": 30,
+  "max_segments": 4,
+  "trains_selected": 3,
+  "trains_evaluated": 3,
+  "combinations": 12,
+  "combinations_not_queried": 0,
+  "classes_not_offered": 0,
+  "requests_per_combination": 2.5,
+  "covers_direct_checks": true,
+  "planned": [{"train_number": "12076", "travel_class": "3A", "quota": "GN"}],
+  "quotas": [{"quota": "GN", "quota_label": "General", "combinations": 6,
+              "combinations_not_queried": 0, "next_opening_at": null, "notes": []}],
+  "trains": [{"train_number": "12076", "train_name": "Example Express",
+              "evaluation": "EVALUATED", "combinations": 4}],
+  "explanation": [
+    "12 train/class/quota combinations share a budget of 30 provider requests per search. Each gets its direct-ticket check first (12 requests).",
+    "The remaining 18 requests look for split-ticket alternatives (2, then 3, then 4 tickets), shared fairly. Each extra train or class adds combinations and leaves less depth for each."
+  ]
+}
+```

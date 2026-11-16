@@ -5,6 +5,7 @@ import {
   JourneySearchSchema,
   MetaSchema,
   OptimizeResultSchema,
+  SearchPlanSchema,
   StationSearchResponseSchema,
   TrainRouteResponseSchema,
   TrainSearchResponseSchema,
@@ -81,6 +82,30 @@ export type OptimizeInput = {
   /** Searched separately and never mixed; defaults to General (GN) on the server. */
   quotas?: string[];
 };
+
+/** Combinations a search would check now and how the budget is shared. Costs no availability
+ * request (the server only loads the selected trains' routes, which the search needs anyway). */
+export const searchPreviewQuery = (input: OptimizeInput) =>
+  queryOptions({
+    queryKey: [
+      "preview",
+      input.source,
+      input.destination,
+      input.journey_date,
+      [...input.classes].sort().join(","),
+      [...(input.quotas ?? ["GN"])].sort().join(","),
+      [...(input.train_numbers ?? [])].sort().join(","),
+    ] as const,
+    queryFn: ({ signal }) =>
+      apiRequest("/journeys/preview", {
+        method: "POST",
+        body: input,
+        schema: SearchPlanSchema,
+        signal,
+      }),
+    staleTime: 60_000,
+    retry: false,
+  });
 
 export async function startOptimization(input: OptimizeInput): Promise<{
   searchId: string;

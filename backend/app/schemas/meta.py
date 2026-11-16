@@ -49,9 +49,15 @@ class QuotaOption(ApiModel):
 
 
 class SearchLimits(ApiModel):
+    """Enforced by the server; clients only mirror them (the server refuses, never truncates)."""
+
     max_segments: int
     max_trains_per_search: int
-    max_availability_requests_per_search: int
+    default_trains_selected: int = Field(description="Trains the train list pre-selects.")
+    max_classes_per_search: int
+    max_availability_requests_per_search: int = Field(
+        description="Provider availability attempts per search, retries included."
+    )
     max_advance_booking_days: int
 
 

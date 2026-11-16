@@ -29,8 +29,10 @@ export function SearchProgress({ search }: { search: JourneySearch }) {
         <div className="h-full bg-brand transition-all" style={{ width: `${percent}%` }} />
       </div>
       <p className="mt-2 text-sm text-muted" aria-live="polite">
-        {made} of {budget} availability checks used · {coverage?.cache_hits ?? 0} served from cache ·{" "}
-        {search.recommendations.length} combination(s) found so far
+        {made} of {budget} provider requests used
+        {coverage?.availability_retries ? ` (${coverage.availability_retries} retries)` : ""} ·{" "}
+        {coverage?.cache_hits ?? 0} served from cache · {search.recommendations.length}{" "}
+        combination(s) found so far
       </p>
     </section>
   );
@@ -49,10 +51,14 @@ export function CoverageNotice({ search }: { search: JourneySearch }) {
         {c.combinations_not_queried
           ? ` (${c.combinations_not_queried} more not checked: quota not open or not supported)`
           : ""}
-        : {c.availability_requests_made} of{" "}
-        {c.request_budget} provider checks used, {c.cache_hits} from cache
+        : {c.availability_requests_made} of {c.request_budget} provider requests used
+        {c.availability_retries ? ` (including ${c.availability_retries} retries)` : ""},{" "}
+        {c.cache_hits} from cache
         {c.segments_failed ? `, ${c.segments_failed} failed` : ""}
         {c.segments_unknown ? `, ${c.segments_unknown} unclear` : ""}.
+        {c.combinations_not_reached
+          ? ` ${c.combinations_not_reached} combination(s) could not be checked at all within the budget — select fewer trains or classes.`
+          : ""}
         {c.availability_requests_planned > c.availability_requests_made + c.cache_hits
           ? ` About ${c.availability_requests_planned - c.availability_requests_made - c.cache_hits} more checks were needed for full coverage.`
           : ""}

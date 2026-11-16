@@ -68,6 +68,55 @@ class OptimizeRequest(ApiModel):
         return None if value is None else list(dict.fromkeys(value))
 
 
+class PlannedCombination(ApiModel):
+    train_number: str
+    travel_class: str
+    quota: QuotaLiteral
+
+
+class PlanQuota(ApiModel):
+    quota: QuotaLiteral
+    quota_label: str
+    combinations: int = Field(description="Combinations of this quota the search will query.")
+    combinations_not_queried: int = Field(
+        description="Offered combinations not queried now (e.g. Tatkal booking not open yet)."
+    )
+    next_opening_at: datetime | None = Field(
+        description="Earliest future booking window opening among the skipped ones (IST)."
+    )
+    notes: list[str]
+
+
+class PlanTrain(ApiModel):
+    train_number: str
+    train_name: str | None
+    evaluation: str = Field(description="EVALUATED, or why the train cannot be checked.")
+    combinations: int
+
+
+class SearchPlanResponse(ApiModel):
+    """What a search started now would query — no availability request was made (D-29)."""
+
+    data_mode: DataMode
+    request_budget: int = Field(description="Provider availability attempts allowed per search.")
+    max_segments: int
+    trains_selected: int
+    trains_evaluated: int
+    combinations: int = Field(description="Train x class x eligible quota combinations to query.")
+    combinations_not_queried: int
+    classes_not_offered: int = Field(description="Selected train x class pairs not offered.")
+    requests_per_combination: float | None = Field(
+        description="Budget divided by combinations: the average depth each one can get."
+    )
+    covers_direct_checks: bool = Field(
+        description="True when the budget pays for every combination's direct-ticket check."
+    )
+    planned: list[PlannedCombination]
+    quotas: list[PlanQuota]
+    trains: list[PlanTrain]
+    explanation: list[str]
+
+
 class SearchAccepted(ApiModel):
     search_id: uuid.UUID
     status: Literal["QUEUED", "RUNNING", "COMPLETED", "FAILED"]
@@ -94,11 +143,31 @@ class Coverage(ApiModel):
         default=0,
         description="Offered combinations deliberately not queried (e.g. Tatkal not open yet).",
     )
+    combinations_not_reached: int = Field(
+        default=0,
+        description=(
+            "Queryable combinations that received no availability check at all (budget, "
+            "deadline or provider stop). Zero whenever the budget covers every direct check."
+        ),
+    )
     availability_requests_planned: int = Field(
         description="Requests made + cache hits + requests still needed at the depth reached."
     )
-    availability_requests_made: int = Field(description="Provider availability calls (budgeted).")
-    request_budget: int
+    availability_requests_made: int = Field(
+        description="Provider availability attempts charged to the budget, retries included."
+    )
+    availability_checks_made: int = Field(
+        default=0,
+        description="Logical availability checks sent to the provider (not cache hits).",
+    )
+    availability_retries: int = Field(
+        default=0, description="Retry attempts included in availability_requests_made."
+    )
+    availability_retries_refused: int = Field(
+        default=0,
+        description="Failed checks not retried because the search budget was used up.",
+    )
+    request_budget: int = Field(description="Provider availability attempts allowed per search.")
     cache_hits: int
     segments_checked: int = Field(description="Distinct segments with an interpretable answer.")
     segments_unknown: int
@@ -182,6 +251,9 @@ class ClassEvaluation(ApiModel):
         "NOT_QUERIED",
     ]
     queried: bool = Field(default=True, description="False when the provider was not asked.")
+    segments_queried: int = Field(
+        default=0, description="Segment availability answers for this combination (incl. cache)."
+    )
     depth_reached: int
     best_status_tier: int | None
     recommendations: int

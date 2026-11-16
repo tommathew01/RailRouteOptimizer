@@ -34,6 +34,10 @@ class QuotaEligibilityService:
     def is_supported(self, quota: Quota) -> bool:
         return quota in self._supported
 
+    @property
+    def supported_quotas(self) -> frozenset[Quota]:
+        return self._supported
+
     def rule(self, quota: Quota) -> OpeningRule | None:
         return self._rules[quota]
 

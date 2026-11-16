@@ -35,11 +35,15 @@ from app.schemas.journeys import (
     Coverage,
     JourneyFilters,
     JourneySearchResponse,
+    PlannedCombination,
+    PlanQuota,
+    PlanTrain,
     PredictionSummary,
     QuotaSkipGroup,
     QuotaSummary,
     RecommendationOut,
     SearchError,
+    SearchPlanResponse,
     SearchRequestEcho,
     SegmentOut,
     TrainEvaluation,
@@ -263,6 +267,7 @@ def _class_evaluations(
                     **common,  # type: ignore[arg-type]
                     state=info.state.value if info else "NOT_EVALUATED",
                     queried=bool(info and info.edges_known),
+                    segments_queried=info.edges_known if info else 0,
                     depth_reached=info.depth_reached if info else 0,
                     best_status_tier=(
                         int(info.best_complete_tier)
@@ -397,15 +402,23 @@ def quota_summaries(
 def coverage(ctx: SearchContext) -> Coverage:
     planner = ctx.planner
     outstanding = planner.outstanding_edges() if planner else 0
-    made = ctx.budget.used
+    progress = _progress(ctx)
+    budget = ctx.budget
+    made = budget.used
     return Coverage(
         trains_found=ctx.stats.trains_found,
         trains_evaluated=sum(1 for t in ctx.trains if t.evaluation == "EVALUATED"),
         combinations_evaluated=len(ctx.combos),
         combinations_not_queried=ctx.stats.combinations_not_queried,
+        combinations_not_reached=sum(
+            1 for cid in ctx.combos if (info := progress.get(cid)) is None or not info.edges_known
+        ),
         availability_requests_planned=made + ctx.stats.cache_hits + outstanding,
         availability_requests_made=made,
-        request_budget=ctx.budget.limit,
+        availability_checks_made=budget.checks,
+        availability_retries=budget.retries,
+        availability_retries_refused=budget.retries_refused,
+        request_budget=budget.limit,
         cache_hits=ctx.stats.cache_hits,
         segments_checked=ctx.stats.segments_checked,
         segments_unknown=ctx.stats.segments_unknown,
@@ -434,6 +447,12 @@ def warnings_for(
         notes.extend(group.message for group in summary.not_queried)
     if reason is not None:
         notes.append(INCOMPLETE_MESSAGES[reason])
+    if refused := ctx.budget.retries_refused:
+        notes.append(
+            f"{refused} failed check{'s were' if refused != 1 else ' was'} not retried because the "
+            "search's request budget was used up; those segments count as not checked, not as "
+            "unavailable."
+        )
     if state is SearchCompleteness.NO_PATH_FOUND_PARTIAL:
         notes.append("No combination found in the segments checked. That does not mean none exist.")
     elif state is SearchCompleteness.NO_PATH_FOUND and ctx.stats.trains_found:
@@ -504,6 +523,98 @@ def build_response(
         created_at=record.created_at,
         started_at=record.started_at,
         completed_at=record.completed_at,
+    )
+
+
+def plan_explanation(combinations: int, budget: int) -> list[str]:
+    """User-facing description of how the budget will be spread (D-27, D-29)."""
+    if combinations == 0:
+        return ["Nothing can be checked for this selection, so no request would be made."]
+    noun = "combination" if combinations == 1 else "combinations"
+    if budget < combinations:
+        return [
+            f"The budget of {budget} provider requests per search covers the direct-ticket check "
+            f"of only {budget} of the {combinations} train/class/quota {noun}; "
+            f"{combinations - budget} would not be checked at all.",
+            "Select fewer trains or classes so that every combination is checked.",
+        ]
+    spare = budget - combinations
+    lines = [
+        f"{combinations} train/class/quota {noun} share a budget of {budget} provider "
+        f"requests per search. Each gets its direct-ticket check first "
+        f"({combinations} request{'s' if combinations != 1 else ''}).",
+    ]
+    if spare:
+        lines.append(
+            f"The remaining {spare} request{'s' if spare != 1 else ''} look for split-ticket "
+            "alternatives (2, then 3, then 4 tickets), shared fairly. Each extra train or class "
+            "adds combinations and leaves less depth for each."
+        )
+    else:
+        lines.append(
+            "No requests are left for split-ticket alternatives. Select fewer trains or classes "
+            "to let the search look for them."
+        )
+    return lines
+
+
+#: Train evaluations that mean "not part of the selection" (as opposed to "selected, unusable").
+_NOT_SELECTED = frozenset({"DIFFERENT_STATIONS", "SKIPPED_TRAIN_LIMIT"})
+
+
+def _plan_quota(quota: Quota, summary: QuotaSummary) -> PlanQuota:
+    notes = [] if summary.provider_supported else [_unsupported_message(quota)]
+    notes.extend(group.message for group in summary.not_queried)
+    return PlanQuota(
+        quota=quota.value,
+        quota_label=quota.label,
+        combinations=summary.combinations_eligible,
+        combinations_not_queried=summary.combinations_not_queried,
+        next_opening_at=summary.next_opening_at,
+        notes=notes,
+    )
+
+
+def plan_response(
+    ctx: SearchContext, *, data_mode: str, provider_quotas: frozenset[Quota]
+) -> SearchPlanResponse:
+    budget = ctx.budget.limit
+    combos = list(ctx.combos.values())
+    summaries = quota_summaries(ctx, {}, provider_quotas)
+    per_train: dict[int, int] = {}
+    for combo in combos:
+        per_train[id(combo.train)] = per_train.get(id(combo.train), 0) + 1
+    return SearchPlanResponse(
+        data_mode=data_mode,  # type: ignore[arg-type]
+        request_budget=budget,
+        max_segments=ctx.request.max_segments,
+        trains_selected=len(ctx.request.train_numbers or ())
+        or sum(1 for t in ctx.trains if t.evaluation not in _NOT_SELECTED),
+        trains_evaluated=sum(1 for t in ctx.trains if t.evaluation == "EVALUATED"),
+        combinations=len(combos),
+        combinations_not_queried=ctx.stats.combinations_not_queried,
+        classes_not_offered=sum(
+            1 for t in ctx.trains for state in t.class_states.values() if state == "NOT_OFFERED"
+        ),
+        requests_per_combination=round(budget / len(combos), 2) if combos else None,
+        covers_direct_checks=budget >= len(combos),
+        planned=[
+            PlannedCombination(
+                train_number=c.train.train_number, travel_class=c.travel_class, quota=c.quota.value
+            )
+            for c in combos
+        ],
+        quotas=[_plan_quota(Quota(s.quota), s) for s in summaries],
+        trains=[
+            PlanTrain(
+                train_number=t.train_number,
+                train_name=t.name,
+                evaluation=t.evaluation,
+                combinations=per_train.get(id(t), 0),
+            )
+            for t in ctx.trains
+        ],
+        explanation=plan_explanation(len(combos), budget) + list(ctx.request.notes),
     )
 
 

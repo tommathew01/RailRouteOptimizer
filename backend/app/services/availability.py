@@ -3,6 +3,10 @@
 Only interpretable observations (status other than UNKNOWN) are cached. Every observation is
 persisted (append-only) *before* it is cached, so cached entries always reference durable rows.
 Provider failures are returned as outcomes, never converted into NOT_AVAILABLE.
+
+Budget accounting (D-28): cache hits and results shared through single-flight are free. A call
+that goes to the provider reserves one attempt, every retry must reserve another, and the call is
+settled against the attempts actually made — so the search budget counts real provider requests.
 """
 
 from __future__ import annotations
@@ -22,7 +26,7 @@ from app.core import metrics
 from app.core.clock import Clock
 from app.domain.enums import AvailabilityStatus, SegmentQueryOutcome
 from app.domain.models import AvailabilityQuery, SegmentKey, SegmentObservation
-from app.providers.base import RailwayProvider
+from app.providers.base import RailwayProvider, call_gate
 from app.providers.errors import ProviderError, ProviderErrorCategory
 from app.repositories.base import Persistence
 from app.repositories.records import SegmentRunRecord
@@ -107,8 +111,11 @@ class AvailabilityService:
         started = time.perf_counter()
 
         async def compute() -> SegmentObservation:
-            if budget is not None and not await budget.try_consume():
-                raise _BudgetRefusedError
+            call = None
+            if budget is not None:
+                call = await budget.start_call()
+                if call is None:
+                    raise _BudgetRefusedError
             key = request.key
             query = AvailabilityQuery(
                 train_number=key.train_number,
@@ -118,12 +125,18 @@ class AvailabilityService:
                 travel_class=key.travel_class,
                 quota=key.quota,
             )
+            # A guard refusal before the first attempt never reached the provider; anything else
+            # (success, provider error, cancellation mid-request) did.
+            reached = True
             try:
-                record = await self._provider.get_availability(query)
+                with call_gate(call):
+                    record = await self._provider.get_availability(query)
             except ProviderError as error:
-                if budget is not None and error.category is ProviderErrorCategory.QUOTA_EXHAUSTED:
-                    await budget.refund()  # the guard refused before any provider call
+                reached = error.category is not ProviderErrorCategory.QUOTA_EXHAUSTED
                 raise
+            finally:
+                if call is not None:
+                    await call.settle(reached_provider=reached)
             observation = SegmentObservation(
                 id=uuid.uuid4(),
                 key=key,

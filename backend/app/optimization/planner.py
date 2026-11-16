@@ -1,22 +1,40 @@
-"""Adaptive, budget-aware availability query planner (doc 04 §6; decision D-04). Pure: no I/O.
+"""Adaptive, budget-aware availability query planner (doc 04 §6; D-04, D-27). Pure: no I/O.
 
-For every (train, class) *combination* the planner explores candidate paths by increasing number
-of segments: the direct segment first, then 2-, 3- and 4-segment paths. Within a depth, candidates
-are ordered by (unknown edges needed, heuristic weight of their intermediate stops, route order).
+For every train x class x quota *combination* the planner explores candidate paths by increasing
+number of segments (tickets): the direct segment first, then 2-, 3- and 4-segment paths. Within a
+depth, candidates are ordered by (unknown edges needed, heuristic weight of their intermediate
+stops, route order).
 
-Query order rules (documented and tested):
+Query order rules within a combination (documented and tested):
 
 * A candidate's next edge is requested only after all its earlier edges are known usable.
 * A candidate containing any edge already known ineligible (not available, filtered out,
   unknown status) or failed is pruned without spending a request. Failed or unqueried edges are
   never treated as *unavailable*; they are simply not usable in this search.
 * Each distinct edge is requested at most once per search.
-* Combinations share the request budget round-robin, one request per combination per round.
 * A combination stops as soon as it has a complete all-confirmed/available path: deeper paths
   can never outrank it.
 
-The caller executes each wave, reports every result with :meth:`QueryPlanner.record`, and calls
-:meth:`QueryPlanner.stop` when the budget or deadline is reached.
+Scheduling across combinations (fair, progressive deepening — D-27). Every query slot goes to the
+active combination with the smallest key
+
+    (depth, queries at that depth, result quality, round-robin distance from the cursor)
+
+* **depth** — shallower work always comes first: every combination's direct ticket is requested
+  before any combination explores 2-ticket paths, every 2-ticket level before any 3-ticket level,
+  and so on. A combination only waits for shallower work of *others*; it never waits forever,
+  because every depth is finite.
+* **queries at that depth** — within a level the budget is shared equally (one query per
+  combination per round). Combinations that finish (solved, exhausted) drop out, so their unused
+  share flows to the others automatically.
+* **result quality** — within a round, combinations without any complete path go first, then
+  those whose best path includes waitlist, then RAC: the ones with the most to gain.
+* **round-robin cursor** — persistent across waves; it moves to just after the combination that
+  received the last query, so ties never favour the same combinations.
+
+The caller executes each wave, reports every result with :meth:`QueryPlanner.record` (or returns
+an unexecuted query with :meth:`QueryPlanner.release`), and calls :meth:`QueryPlanner.stop` when
+the budget or deadline is reached.
 """
 
 from __future__ import annotations
@@ -94,6 +112,12 @@ class _Combo:
     tiers: dict[Edge, StatusTier] = field(default_factory=dict)
     state: ComboState = ComboState.ACTIVE
     best_tier: StatusTier | None = None
+    #: Queries scheduled (selected and not released) at the current depth / in total.
+    depth_queries: int = 0
+    queries: int = 0
+    #: Answers recorded so far; with ``depth`` it tells whether ``best_tier`` can have changed.
+    answers: int = 0
+    tier_checked: tuple[int, int] | None = None
 
     def edge_state(self, edge: Edge) -> EdgeState:
         return self.edges.get(edge, EdgeState.UNQUERIED)
@@ -106,6 +130,15 @@ class ComboProgress:
     depth_reached: int
     edges_known: int
     best_complete_tier: StatusTier | None
+    #: Queries scheduled for this combination so far (executed or still in flight).
+    queries: int = 0
+
+
+def _quality_rank(tier: StatusTier | None) -> int:
+    """Scheduling priority within a round: lower = more to gain from further exploration."""
+    if tier is None:
+        return 0
+    return 1 if tier is StatusTier.INCLUDES_WAITLIST else 2
 
 
 def _edges(path: Path) -> list[Edge]:
@@ -137,38 +170,50 @@ class QueryPlanner:
         self._max_candidates = max_candidates_per_depth
         self._max_combinations = max_combinations_per_depth
         self._combos: dict[int, _Combo] = {spec.combo_id: _Combo(spec) for spec in specs}
+        #: Round-robin order (the order of ``specs``); the caller decides how quotas interleave.
         self._order = ids
-        self._rotation = 0
+        self._position = {cid: index for index, cid in enumerate(ids)}
+        self._cursor = 0
+        #: Selected, not yet recorded or released queries -> depth of their combo at selection.
+        self._in_flight: dict[tuple[int, Edge], int] = {}
 
     # --- Public API -----------------------------------------------------------------------------
+    @property
+    def cursor(self) -> int:
+        """Round-robin position where the next tie-break starts (just after the last served)."""
+        return self._cursor
+
     def next_wave(self, max_queries: int) -> list[PlannedQuery]:
+        """Select up to ``max_queries`` queries, one slot at a time, by the fair-scheduling key."""
         if max_queries <= 0:
             return []
         for combo in self._combos.values():
             self._advance(combo)
-        active = [cid for cid in self._order if self._combos[cid].state is ComboState.ACTIVE]
-        if not active:
-            return []
-        start = self._rotation % len(active)
-        self._rotation += 1
-        order = active[start:] + active[:start]
-        pointers = {cid: self._combos[cid].cursor for cid in order}
+        pointers = {
+            cid: combo.cursor
+            for cid, combo in self._combos.items()
+            if combo.state is ComboState.ACTIVE
+        }
         wave: list[PlannedQuery] = []
-        progressed = True
-        while len(wave) < max_queries and progressed:
-            progressed = False
-            for cid in order:
-                if len(wave) >= max_queries:
-                    break
-                query = self._pick(self._combos[cid], pointers)
-                if query is not None:
-                    wave.append(query)
-                    progressed = True
+        while len(wave) < max_queries and pointers:
+            cid = min(pointers, key=self._schedule_key)
+            combo = self._combos[cid]
+            query = self._pick(combo, pointers)
+            if query is None:  # nothing selectable until this wave's answers arrive
+                del pointers[cid]
+                continue
+            combo.depth_queries += 1
+            combo.queries += 1
+            self._in_flight[(cid, query.edge)] = combo.depth
+            self._cursor = (self._position[cid] + 1) % len(self._order)
+            wave.append(query)
         return wave
 
     def record(self, query: PlannedQuery, status: AvailabilityStatus | None) -> None:
         """Report an executed query. ``status=None`` means the provider call failed."""
+        self._in_flight.pop((query.combo_id, query.edge), None)
         combo = self._combos[query.combo_id]
+        combo.answers += 1
         if status is None:
             combo.edges[query.edge] = EdgeState.FAILED
             return
@@ -183,10 +228,18 @@ class QueryPlanner:
             combo.edges[query.edge] = EdgeState.BLOCKED
 
     def release(self, query: PlannedQuery) -> None:
-        """Return a selected-but-not-executed query to the pool (e.g. budget refused it)."""
+        """Return a selected-but-not-executed query to the pool (e.g. budget refused it).
+
+        The combination's share is restored too, so a refused query never counts as service.
+        """
         combo = self._combos[query.combo_id]
         if combo.edge_state(query.edge) is EdgeState.SELECTED:
             combo.edges.pop(query.edge, None)
+        depth = self._in_flight.pop((query.combo_id, query.edge), None)
+        if depth is not None:
+            combo.queries -= 1
+            if depth == combo.depth:
+                combo.depth_queries -= 1
 
     def stop(self) -> None:
         for combo in self._combos.values():
@@ -223,10 +276,17 @@ class QueryPlanner:
             combo = self._combos[cid]
             self._best_complete_tier(combo)
             known = sum(1 for state in combo.edges.values() if state is not EdgeState.SELECTED)
-            report.append(ComboProgress(cid, combo.state, combo.depth, known, combo.best_tier))
+            report.append(
+                ComboProgress(cid, combo.state, combo.depth, known, combo.best_tier, combo.queries)
+            )
         return report
 
     # --- Internals ------------------------------------------------------------------------------
+    def _schedule_key(self, cid: int) -> tuple[int, int, int, int]:
+        combo = self._combos[cid]
+        distance = (self._position[cid] - self._cursor) % len(self._order)
+        return (combo.depth, combo.depth_queries, _quality_rank(combo.best_tier), distance)
+
     def _evaluate(self, combo: _Combo, path: Path) -> tuple[_Eval, Edge | None]:
         edges = _edges(path)
         states = [combo.edge_state(e) for e in edges]
@@ -245,6 +305,10 @@ class QueryPlanner:
 
     def _best_complete_tier(self, combo: _Combo) -> StatusTier | None:
         """Best tier among complete candidates so far (all depths explored)."""
+        checked = (combo.depth, combo.answers)
+        if combo.tier_checked == checked:  # no new answers and no new candidates since last scan
+            return combo.best_tier
+        combo.tier_checked = checked
         for path in combo.candidates:
             if self._evaluate(combo, path)[0] is _Eval.COMPLETE:
                 tier = self._path_tier(combo, path)
@@ -303,6 +367,7 @@ class QueryPlanner:
                 combo.state = ComboState.EXHAUSTED
                 return
             combo.depth += 1
+            combo.depth_queries = 0
             combo.candidates = self._generate(combo, combo.depth)
             combo.cursor = 0
 

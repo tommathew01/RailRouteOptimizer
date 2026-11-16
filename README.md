@@ -40,7 +40,9 @@ make backend                         # API on http://localhost:8000  (docs: /api
 make frontend                        # Web on http://localhost:3000
 ```
 
-Everything in one command instead: `docker compose --profile app up -d --build`.
+Everything in one command instead: `docker compose --profile app up -d --build`. Both ways read
+the same root `.env`: Compose forwards every application setting to the backend container, so the
+two run modes behave the same (docs/08 D-30). Re-run with `--build` after code changes.
 
 The default `RAILWAY_PROVIDER=mock` serves **simulated** trains and availability. The UI shows a
 "Demo mode" banner and the API returns `data_mode: "DEMO"` — mock data is never presented as live.
@@ -96,7 +98,9 @@ Every variable is documented in [`.env.example`](.env.example) and validated at 
 | Variable | Default | Notes |
 |---|---|---|
 | `RAILWAY_PROVIDER` | `mock` | `railkit` requires `RAILKIT_API_KEY`; production refuses `mock` |
-| `SEARCH_MAX_AVAILABILITY_REQUESTS` | `30` | provider availability calls per search (server-enforced) |
+| `SEARCH_MAX_AVAILABILITY_REQUESTS` | `30` | provider availability attempts per search, retries included (server-enforced) |
+| `SEARCH_MAX_TRAINS` / `SEARCH_DEFAULT_TRAINS` | `5` / `3` | trains selectable / pre-selected per search |
+| `SEARCH_MAX_CLASSES` | `3` | classes per search (5 × 3 × GN+TQ = 30 = the default budget) |
 | `PROVIDER_MONTHLY_REQUEST_LIMIT` | `50` | global guard; set to your RailKit plan |
 | `AVAILABILITY_DATE_POLICY` | `SEGMENT_BOARDING_DATE` | date sent for segments boarding after midnight (docs/08 D-02) |
 | `AVAILABILITY_CACHE_TTL_SECONDS` | `120` | pending RailKit caching terms |
@@ -126,9 +130,9 @@ compose.yaml        Local stack (PostgreSQL, Redis; app services under the "app"
 | 6. Frontend | ✅ done |
 | 7. Hardening | ✅ done (see `docs/10_OPERATIONS_RUNBOOK.md`) |
 
-Verification at the time of writing (2026-11-15, after Tatkal support): backend 420
-unit/API tests + 12 PostgreSQL/Redis integration tests (ruff, mypy `--strict`, `alembic check`),
-frontend 39 Vitest tests, 18 Playwright tests (desktop + mobile, axe WCAG 2.1 AA).
+Verification at the time of writing (2026-11-15, after fair budget allocation — docs/08 §6b):
+backend 467 unit/API tests + 12 PostgreSQL/Redis integration tests (ruff, mypy `--strict`),
+frontend 44 Vitest tests, 22 Playwright tests (desktop + mobile, axe WCAG 2.1 AA).
 
 ## Known limitations
 

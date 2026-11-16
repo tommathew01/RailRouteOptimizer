@@ -161,3 +161,35 @@ test("nearby-station matches lead to a search for the stations the trains really
   await expect(page).toHaveURL(/\/search\?from=NZM&to=BDTS&.*classes=3A&rac=1&wl=0/);
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Hazrat Nizamuddin");
 });
+
+test("the train list shows combinations and the request budget before searching", async ({ page }) => {
+  await page.goto(`/search?from=TIR&to=TVC&date=${journeyDate()}&classes=3A,SL`);
+  await expect(page.getByRole("checkbox", { checked: true })).toHaveCount(2);
+  // 2 trains × 2 classes × General, against the e2e API's budget of 40 provider requests.
+  await expect(
+    page.getByText("4 combinations to check · budget 40 provider requests · about 10 per combination"),
+  ).toBeVisible();
+  await expect(page.getByText(/Each gets its direct-ticket check first/)).toBeVisible();
+  await expect(page.getByText(/leaves less depth for each/)).toBeVisible();
+
+  await page.getByRole("checkbox", { checked: true }).first().click(); // deselect one train
+  await expect(page.getByText(/^2 combinations to check · budget 40/)).toBeVisible();
+  await expectAccessible(page);
+});
+
+test("classes are limited by the server's setting and never silently dropped", async ({ page }) => {
+  await page.goto("/");
+  const classes = page.getByRole("group", { name: "Classes" });
+  await expect(classes.getByText(/Choose up to 3\./)).toBeVisible();
+  await classes.getByText("SL", { exact: true }).click();
+  await classes.getByText("2A", { exact: true }).click();
+  await expect(classes.getByRole("checkbox", { checked: true })).toHaveCount(3);
+  await expect(classes.getByRole("checkbox", { name: /1A/ })).toBeDisabled();
+
+  // An old link with four classes is explained, not truncated, and cannot start a search.
+  await page.goto(`/search?from=TIR&to=TVC&date=${journeyDate()}&classes=1A,2A,3A,SL`);
+  await expect(page.getByText("Too many classes for one search")).toBeVisible();
+  await expect(page.getByText(/4 selected: 1A, 2A, 3A, SL/)).toBeVisible();
+  await expect(page.getByRole("button", { name: /Find segment combinations/ })).toBeDisabled();
+  await expectAccessible(page);
+});

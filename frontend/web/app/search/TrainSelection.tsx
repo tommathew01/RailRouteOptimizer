@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -8,8 +8,16 @@ import { useState } from "react";
 import { Notice } from "@/components/StatusBits";
 import { TrainCard } from "@/components/TrainCard";
 import { ApiError } from "@/lib/api/client";
-import { metaQuery, startOptimization, trainSearchQuery } from "@/lib/api/queries";
+import {
+  metaQuery,
+  searchPreviewQuery,
+  startOptimization,
+  trainSearchQuery,
+  type OptimizeInput,
+} from "@/lib/api/queries";
+import type { SearchPlan } from "@/lib/api/schemas";
 import { formatCalendarDate } from "@/lib/format";
+import { canAdd, classLimitMessage, defaultTrainSelection, planSummary } from "@/lib/limits";
 import { quotaList } from "@/lib/quotas";
 import { parseJourneyQuery, type JourneyQuery } from "@/lib/search-params";
 import { nearbyStationPairs, pairSearchHref } from "@/lib/station-pairs";
@@ -53,31 +61,41 @@ function TrainList({
   const trains = useQuery(
     trainSearchQuery({ source: query.from, destination: query.to, journey_date: query.date }),
   );
-  const maxTrains = meta?.limits.max_trains_per_search ?? 5;
+  const limits = meta?.limits;
+  const maxTrains = limits?.max_trains_per_search;
   const [selected, setSelected] = useState<Set<string> | null>(null);
 
   const eligible = (trains.data?.trains ?? []).filter((t) => t.serves_requested_stations);
   const pairs = trains.data ? nearbyStationPairs(trains.data.trains, query) : [];
-  const chosen = selected ?? new Set(eligible.slice(0, maxTrains).map((t) => t.train_number));
+  const chosen =
+    selected ?? defaultTrainSelection(eligible.map((t) => t.train_number), limits);
+  // An old link may carry more classes than allowed: say so instead of dropping any (D-29).
+  const classProblem = classLimitMessage(query.classes, limits?.max_classes_per_search);
+
+  const input: OptimizeInput = {
+    source: query.from,
+    destination: query.to,
+    journey_date: query.date,
+    classes: query.classes,
+    filters: { allow_rac: query.rac, allow_waitlist: query.wl },
+    train_numbers: [...chosen].sort(),
+    quotas: query.quotas,
+  };
+  const preview = useQuery({
+    ...searchPreviewQuery(input),
+    enabled: chosen.size > 0 && classProblem === null && eligible.length > 0,
+    placeholderData: keepPreviousData,
+  });
 
   const optimize = useMutation({
-    mutationFn: () =>
-      startOptimization({
-        source: query.from,
-        destination: query.to,
-        journey_date: query.date,
-        classes: query.classes,
-        filters: { allow_rac: query.rac, allow_waitlist: query.wl },
-        train_numbers: [...chosen],
-        quotas: query.quotas,
-      }),
+    mutationFn: () => startOptimization(input),
     onSuccess: ({ searchId }) => router.push(`/results/${searchId}`),
   });
 
   function toggle(trainNumber: string) {
     const next = new Set(chosen);
     if (next.has(trainNumber)) next.delete(trainNumber);
-    else if (next.size < maxTrains) next.add(trainNumber);
+    else if (canAdd(next.size, maxTrains)) next.add(trainNumber);
     setSelected(next);
   }
 
@@ -140,13 +158,21 @@ function TrainList({
             </Notice>
           ) : (
             <p className="text-sm text-muted" id="selection-help">
-              Select up to {maxTrains} trains. Each selected train × class × quota is checked within
-              a fixed request budget, so fewer trains means deeper checks.
+              {maxTrains ? `Select up to ${maxTrains} trains. ` : ""}Each selected train × class ×
+              quota is checked within a fixed request budget, so fewer trains means deeper checks.
               {query.quotas.some((q) => q !== "GN")
                 ? " Tatkal quotas are only checked once their booking window has opened."
                 : ""}
             </p>
           )}
+          {classProblem ? (
+            <Notice tone="danger" title="Too many classes for one search">
+              <p>{classProblem}</p>
+              <Link href={modifyHref} className="font-semibold underline">
+                Modify search to choose the classes to keep
+              </Link>
+            </Notice>
+          ) : null}
           <ul className="space-y-3" aria-describedby="selection-help">
             {trains.data.trains.map((train) => (
               <li key={train.train_number}>
@@ -174,6 +200,11 @@ function TrainList({
             hidden={eligible.length === 0}
             className="sticky bottom-0 -mx-4 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-xl sm:border"
           >
+            <PlanPanel
+              plan={chosen.size > 0 && classProblem === null ? preview.data : undefined}
+              loading={preview.isFetching}
+              error={preview.error instanceof ApiError ? preview.error.message : null}
+            />
             {optimizeError ? (
               <p role="alert" className="mb-2 text-sm text-danger">
                 {optimizeError.message}
@@ -185,7 +216,7 @@ function TrainList({
             <button
               type="button"
               className="btn btn-primary w-full sm:w-auto"
-              disabled={chosen.size === 0 || optimize.isPending}
+              disabled={chosen.size === 0 || classProblem !== null || optimize.isPending}
               onClick={() => optimize.mutate()}
             >
               {optimize.isPending
@@ -195,6 +226,50 @@ function TrainList({
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/** Combinations, budget and the depth trade-off, computed by the server before the search. */
+function PlanPanel({
+  plan,
+  loading,
+  error,
+}: {
+  plan: SearchPlan | undefined;
+  loading: boolean;
+  error: string | null;
+}) {
+  if (error) {
+    return (
+      <p role="alert" className="mb-2 text-sm text-danger">
+        {error}
+      </p>
+    );
+  }
+  if (!plan) {
+    return loading ? (
+      <p className="mb-2 text-sm text-muted" aria-live="polite">
+        Counting combinations…
+      </p>
+    ) : null;
+  }
+  const notes = plan.quotas.flatMap((q) => q.notes);
+  return (
+    <div className="mb-3 space-y-1 text-sm" aria-live="polite" aria-busy={loading}>
+      <p className={plan.covers_direct_checks ? "font-semibold" : "font-semibold text-danger"}>
+        {planSummary(plan)}
+      </p>
+      {plan.explanation.map((line) => (
+        <p key={line} className="text-muted">
+          {line}
+        </p>
+      ))}
+      {notes.map((note) => (
+        <p key={note} className="text-muted">
+          {note}
+        </p>
+      ))}
     </div>
   );
 }

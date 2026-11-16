@@ -145,6 +145,23 @@ Explore combinations of three intermediate stops, bounded by request budget and 
 
 A breadth-first or priority-based planner may be used. The exact query ordering must be documented and tested. Favor direct and shorter-segment combinations first.
 
+### 6a. Implemented scheduling across combinations (docs/08 D-27)
+
+Each query slot goes to the active train × class × quota combination with the smallest key
+*(depth, queries at that depth, result quality, round-robin distance from a persistent cursor)*:
+
+1. every combination's **direct ticket** first;
+2. then 2-ticket, then 3-ticket, then 4-ticket alternatives — a level is finished across all
+   combinations before any combination starts the next one;
+3. within a level the budget is shared equally; combinations with no complete path go first in
+   each round, then those whose best path includes waitlist, then RAC;
+4. a solved (all confirmed/available) or exhausted combination stops, and its share goes to the rest.
+
+Consequences: with budget B ≥ number of combinations N, every direct ticket is checked; with B < N,
+exactly B distinct combinations get their direct check (GN and TQ alternate) and the rest are
+reported as not reached (`coverage.combinations_not_reached`), never as unavailable.
+`POST /journeys/preview` shows N and the budget before a search starts.
+
 ## 7. API budget controls
 
 The server owns:
@@ -157,9 +174,12 @@ The server owns:
 
 Client may request a search depth, but server clamps it to policy. A client must never be able to increase the provider budget beyond configured limits.
 
+`SEARCH_MAX_AVAILABILITY_REQUESTS` caps provider **attempts**, retries included (docs/08 D-28).
+
 Return:
 - `availability_requests_planned`
-- `availability_requests_made`
+- `availability_requests_made` (attempts, retries included), `availability_checks_made` (logical),
+  `availability_retries`, `availability_retries_refused`, `combinations_not_reached`
 - `cache_hits`
 - `search_completeness`
 - `incomplete_reason`
@@ -180,8 +200,8 @@ Train route cache can have a longer TTL because schedule data changes less frequ
 ## 8a. Reservation quotas (docs/08 D-20…D-25)
 
 - Every **train × class × quota** is its own planner combination, graph (`GraphKey` includes the
-  quota) and set of paths. Combinations are created quota-major (GN first), so a General-only search
-  is planned exactly as before.
+  quota) and set of paths. Combination ids are quota-major (GN first); the planner's round-robin
+  order interleaves GN and TQ so neither quota starves the other (D-27).
 - A TQ combination is created only when `QuotaEligibilityService` says the booking window is open
   (`OPEN`, `OPENING_PASSED`); `GN` is always `NOT_APPLICABLE`. Skipped combinations spend no budget,
   are counted in `coverage.combinations_not_queried` and make the search

@@ -3,7 +3,8 @@
 * :class:`ProviderQuotaGuard` — global, shared across processes via the store: a fixed window
   (default 100 / 10 min) and a calendar-month cap (IST), checked before *every* HTTP attempt,
   plus a shared back-off after a provider 429. If the store fails, provider calls fail closed.
-* :class:`SearchBudget` — per-search cap on provider availability calls (cache hits are free).
+* :class:`SearchBudget` — per-search cap on provider availability *attempts*, retries included
+  (cache hits are free; D-28).
 """
 
 from __future__ import annotations
@@ -130,24 +131,93 @@ class ProviderQuotaGuard:
 
 
 class SearchBudget:
-    """Counts provider availability calls for one search; safe under concurrent use."""
+    """Per-search cap on provider availability *attempts*; safe under concurrent use (D-28).
+
+    One unit pays for one provider attempt. A logical availability check reserves its first
+    attempt before the call (:meth:`start_call`); every retry reserves one more unit through the
+    call's gate, and is refused when the budget is spent. After the call the reservation is settled
+    against the attempts actually made, so a guard refusal costs nothing and a retry is never
+    free. Cache hits and shared single-flight results never reserve anything.
+    """
 
     def __init__(self, limit: int) -> None:
         self.limit = limit
+        #: Units charged: attempts made plus reservations of calls still in flight.
         self.used = 0
+        #: Logical availability checks that reached the provider (at least one attempt).
+        self.checks = 0
+        #: Provider attempts made (first attempts + retries) = HTTP requests for RailKit.
+        self.attempts = 0
+        #: Attempts beyond the first of a check.
+        self.retries = 0
+        #: Retries the provider client wanted but this budget could not pay for.
+        self.retries_refused = 0
         self._lock = asyncio.Lock()
 
-    async def try_consume(self) -> bool:
+    async def try_consume(self, units: int = 1) -> bool:
         async with self._lock:
-            if self.used >= self.limit:
+            if self.used + units > self.limit:
                 return False
-            self.used += 1
+            self.used += units
             return True
 
-    async def refund(self) -> None:
+    async def refund(self, units: int = 1) -> None:
         async with self._lock:
-            self.used = max(0, self.used - 1)
+            self.used = max(0, self.used - units)
+
+    async def _charge(self, units: int) -> None:
+        """Record attempts that were made without a reservation (never refused: it happened)."""
+        async with self._lock:
+            self.used += units
+
+    async def start_call(self) -> BudgetedCall | None:
+        """Reserve the first attempt of one logical check; ``None`` when the budget is spent."""
+        if not await self.try_consume():
+            return None
+        return BudgetedCall(self)
 
     @property
     def remaining(self) -> int:
         return max(0, self.limit - self.used)
+
+
+class BudgetedCall:
+    """The :class:`~app.providers.base.ProviderCallGate` of one logical check on a budget."""
+
+    def __init__(self, budget: SearchBudget) -> None:
+        self._budget = budget
+        self.reserved = 1
+        self.attempts = 0
+        self._settled = False
+
+    def attempt_started(self) -> None:
+        self.attempts += 1
+
+    async def allow_retry(self) -> bool:
+        if await self._budget.try_consume():
+            self.reserved += 1
+            return True
+        self._budget.retries_refused += 1
+        return False
+
+    async def settle(self, *, reached_provider: bool) -> int:
+        """Charge exactly the attempts made and return unused reservations. Idempotent.
+
+        Adapters that do not report attempts (e.g. the mock provider) are counted as one attempt
+        per call that reached the provider.
+        """
+        if self._settled:
+            return self.attempts
+        self._settled = True
+        budget = self._budget
+        attempts = self.attempts or (1 if reached_provider else 0)
+        self.attempts = attempts
+        if attempts:
+            budget.checks += 1
+            budget.attempts += attempts
+            budget.retries += attempts - 1
+        if attempts < self.reserved:
+            await budget.refund(self.reserved - attempts)
+        elif attempts > self.reserved:
+            await budget._charge(attempts - self.reserved)
+        return attempts

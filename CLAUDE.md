@@ -58,6 +58,8 @@ Commercial railway ticket availability optimization platform.
 - Use provider prediction as a secondary ranking factor.
 - Minimize the number of separate tickets.
 - Never invent availability or prediction values.
+- Share the budget fairly: every combination's direct ticket before any deeper level, equal shares
+  within a level (docs/08 D-27). The search budget counts provider attempts, retries included (D-28).
 
 ## Engineering Standards
 
@@ -99,6 +101,9 @@ a successful test or verified evidence.
   components that use TanStack Query, `useSearchParams` or the current time must sit inside
   `<Suspense>`. The browser calls the backend only through the same-origin proxy
   `app/api/v1/[...path]/route.ts`.
+- Docker/local parity: a new `Settings` field must also be listed (without a value) in the
+  `compose.yaml` backend `environment:` and documented in `.env.example`
+  (`tests/unit/core/test_compose_parity.py`).
 - Decisions and open provider questions: `docs/08_IMPLEMENTATION_PLAN.md`,
   `docs/09_RAILKIT_CONTRACT_VERIFICATION.md`.
 

@@ -57,8 +57,20 @@ SEARCH_RESULTS = Histogram(
 )
 SEARCH_BUDGET_USED = Histogram(
     "railroute_search_availability_requests",
-    "Provider availability requests spent per search.",
-    buckets=(0, 1, 2, 5, 10, 20, 30, 50, 100),
+    "Provider availability attempts (retries included) charged per search.",
+    buckets=(0, 1, 2, 5, 10, 20, 30, 50, 100, 200, 500),
+    registry=REGISTRY,
+)
+SEARCH_RETRIES = Counter(
+    "railroute_search_availability_retries_total",
+    "Availability retries during searches: made (charged to the budget) or refused (no budget).",
+    ["result"],
+    registry=REGISTRY,
+)
+SEARCH_COMBINATIONS_NOT_REACHED = Histogram(
+    "railroute_search_combinations_not_reached",
+    "Queryable train x class x quota combinations that received no availability check.",
+    buckets=(0, 1, 2, 5, 10, 20, 40),
     registry=REGISTRY,
 )
 PREDICTION_COVERAGE = Histogram(

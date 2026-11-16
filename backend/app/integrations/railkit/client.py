@@ -3,7 +3,9 @@
 * One shared ``httpx.AsyncClient`` (connection pooling), closed on shutdown.
 * ``x-api-key`` is attached per request and never logged or echoed.
 * Bounded retries with jittered exponential backoff for timeouts, network errors and 5xx only.
-  400/401/403/404/429 are never retried. Every attempt passes the quota observer first.
+  400/401/403/404/429 are never retried. Every attempt passes the quota observer first, is
+  reported to the caller's per-call gate, and every retry needs the gate's permission (a search
+  budget pays for retries; docs/08 D-28).
 * A semaphore bounds concurrent in-flight requests for the whole process.
 """
 
@@ -22,7 +24,13 @@ from urllib.parse import quote
 import httpx
 
 from app.core.redaction import sanitize_payload
-from app.providers.base import NullRequestObserver, ProviderRequestEvent, ProviderRequestObserver
+from app.providers.base import (
+    NullRequestObserver,
+    ProviderRequestEvent,
+    ProviderRequestObserver,
+    report_attempt,
+    retry_allowed,
+)
 from app.providers.errors import (
     ProviderAuthError,
     ProviderError,
@@ -117,6 +125,7 @@ class RailKitHttpClient:
         while True:
             attempt += 1
             await self._observer.before_request(PROVIDER_NAME, endpoint)
+            report_attempt()
             started = time.perf_counter()
             status_code: int | None = None
             try:
@@ -130,7 +139,7 @@ class RailKitHttpClient:
                 await self._record(
                     endpoint, attempt, error.category.value, status_code, started, error
                 )
-                if error.retryable and attempt <= self._max_retries:
+                if error.retryable and await self._may_retry(attempt):
                     await self._backoff_sleep(attempt)
                     continue
                 raise
@@ -141,7 +150,7 @@ class RailKitHttpClient:
                     endpoint=endpoint,
                 )
                 await self._record(endpoint, attempt, "TIMEOUT", None, started, timeout_error)
-                if attempt <= self._max_retries:
+                if await self._may_retry(attempt):
                     await self._backoff_sleep(attempt)
                     continue
                 raise timeout_error from None
@@ -152,13 +161,17 @@ class RailKitHttpClient:
                     endpoint=endpoint,
                 )
                 await self._record(endpoint, attempt, "UPSTREAM", None, started, network_error)
-                if attempt <= self._max_retries:
+                if await self._may_retry(attempt):
                     await self._backoff_sleep(attempt)
                     continue
                 raise network_error from None
             else:
                 await self._record(endpoint, attempt, "SUCCESS", status_code, started, None)
                 return data
+
+    async def _may_retry(self, attempt: int) -> bool:
+        """Within the retry limit *and* allowed by the caller's per-call budget (D-28)."""
+        return attempt <= self._max_retries and await retry_allowed()
 
     async def _backoff_sleep(self, attempt: int) -> None:
         delay = self._backoff * (2 ** (attempt - 1))

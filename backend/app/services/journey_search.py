@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import itertools
 import logging
 import time
 import uuid
@@ -163,6 +164,16 @@ class JourneySearchService:
             raise InvalidRequestError(
                 f"Select at most {self._settings.search_max_trains} trains per search.",
                 code="TOO_MANY_TRAINS",
+                details={"max_trains": self._settings.search_max_trains},
+            )
+        max_classes = self._settings.max_classes_per_search
+        if len(classes) > max_classes:
+            # Refused, never truncated: the user decides which classes to drop (D-29).
+            raise InvalidRequestError(
+                f"Select at most {max_classes} classes per search "
+                f"({len(classes)} selected: {', '.join(classes)}).",
+                code="TOO_MANY_CLASSES",
+                details={"max_classes": max_classes, "selected_classes": list(classes)},
             )
         return JourneyRequest(
             source=source,
@@ -175,6 +186,27 @@ class JourneySearchService:
             notes=tuple(notes),
             quotas=selected,
         )
+
+    async def preview(self, request: JourneyRequest) -> SearchContext:
+        """Prepare a search exactly as :meth:`submit` would, without any availability request.
+
+        The result lists the train x class x quota combinations a search started now would query
+        (D-29). It costs at most one train search and one route per selected train — both cached
+        and needed by the search itself. Provider errors propagate to the caller.
+        """
+        ctx = SearchContext(
+            search_id=uuid.uuid4(),
+            request=request,
+            budget=SearchBudget(self._settings.search_max_availability_requests),
+            deadline=self._clock.monotonic(),
+        )
+        summaries = await self._trains.search_trains(
+            request.source, request.destination, request.journey_date
+        )
+        ctx.stats.trains_found = len(summaries)
+        await self._prepare_trains(ctx, summaries)
+        self._prepare_combinations(ctx)
+        return ctx
 
     async def submit(self, request: JourneyRequest) -> SearchRecord:
         now = self._clock.now()
@@ -303,6 +335,7 @@ class JourneySearchService:
             counts[combo.combo_id] = counts.get(combo.combo_id, 0) + 1
 
         state, reason = results.completeness(ctx, has_recommendations=bool(recommendation_outs))
+        coverage = results.coverage(ctx)
         record.status = SearchStatus.COMPLETED
         record.search_completeness, record.incomplete_reason = state, reason
         record.requests_made, record.cache_hits = ctx.budget.used, ctx.stats.cache_hits
@@ -320,6 +353,9 @@ class JourneySearchService:
         metrics.SEARCHES.labels(state.value).inc()
         metrics.SEARCH_RESULTS.observe(len(recommendation_outs))
         metrics.SEARCH_BUDGET_USED.observe(ctx.budget.used)
+        metrics.SEARCH_RETRIES.labels("made").inc(ctx.budget.retries)
+        metrics.SEARCH_RETRIES.labels("refused").inc(ctx.budget.retries_refused)
+        metrics.SEARCH_COMBINATIONS_NOT_REACHED.observe(coverage.combinations_not_reached)
         if (share := results.uncertain_prediction_coverage(recommendation_outs)) is not None:
             metrics.PREDICTION_COVERAGE.observe(share)
         logger.info(
@@ -329,6 +365,11 @@ class JourneySearchService:
                 "incomplete_reason": reason.value if reason else None,
                 "recommendations": len(recommendation_outs),
                 "availability_requests_made": ctx.budget.used,
+                "availability_checks_made": ctx.budget.checks,
+                "availability_retries": ctx.budget.retries,
+                "availability_retries_refused": ctx.budget.retries_refused,
+                "combinations": coverage.combinations_evaluated,
+                "combinations_not_reached": coverage.combinations_not_reached,
                 "cache_hits": ctx.stats.cache_hits,
             },
         )
@@ -387,8 +428,9 @@ class JourneySearchService:
 
     def _prepare_combinations(self, ctx: SearchContext) -> None:
         """Turn every offered train x class x quota whose booking window allows it into a
-        planner combination. Quota-major order: General combinations come first, exactly as in
-        a General-only search; skipped quotas are recorded with their eligibility, never queried.
+        planner combination. Combination ids are quota-major (General first, exactly as in a
+        General-only search); the planner's round-robin order interleaves quotas. Skipped quotas
+        are recorded with their eligibility, never queried.
         """
         request = ctx.request
         cap = self._settings.planner_max_intermediate_stops
@@ -423,7 +465,7 @@ class JourneySearchService:
                         now=now,
                     )
 
-        specs: list[ComboSpec] = []
+        by_quota: dict[Quota, list[ComboSpec]] = {quota: [] for quota in request.quotas}
         for quota in request.quotas:
             for train, source, destination, considered, weights in layouts:
                 for travel_class in request.classes:
@@ -435,7 +477,7 @@ class JourneySearchService:
                         continue
                     combo_id = len(ctx.combos)
                     ctx.combos[combo_id] = ComboContext(combo_id, train, travel_class, quota)
-                    specs.append(
+                    by_quota[quota].append(
                         ComboSpec(
                             combo_id,
                             source,
@@ -453,6 +495,14 @@ class JourneySearchService:
                 + ", ".join(not_offered)
                 + "."
             )
+        # Round-robin order alternates quotas (GN, TQ, GN, TQ, …) so that when the budget cannot
+        # cover every direct check, neither quota is starved by the other (D-27).
+        specs = [
+            spec
+            for group in itertools.zip_longest(*by_quota.values())
+            for spec in group
+            if spec is not None
+        ]
         ctx.planner = QueryPlanner(
             specs, filters=request.filters, max_segments=request.max_segments
         )

@@ -7,6 +7,7 @@ import { useState, type FormEvent } from "react";
 import { StationAutocomplete, type StationValue } from "@/components/StationAutocomplete";
 import { metaQuery } from "@/lib/api/queries";
 import { istDate } from "@/lib/format";
+import { canAdd, classLimitMessage } from "@/lib/limits";
 import { openingRuleHint, quotaOptions } from "@/lib/quotas";
 import { canonicalQuotas, journeyQueryString } from "@/lib/search-params";
 import { useNow } from "@/lib/use-now";
@@ -42,9 +43,16 @@ export function JourneySearchForm({ initial }: { initial?: JourneyFormInitial })
     now !== null && meta ? istDate(now, meta.limits.max_advance_booking_days) : undefined;
   const minLength = meta?.station_search_min_query_length ?? 3;
 
+  const classLimit = meta?.limits.max_classes_per_search;
+  const classesFull = !canAdd(classes.length, classLimit);
+
   function toggleClass(code: string) {
     setClasses((current) =>
-      current.includes(code) ? current.filter((c) => c !== code) : [...current, code],
+      current.includes(code)
+        ? current.filter((c) => c !== code)
+        : canAdd(current.length, classLimit)
+          ? [...current, code]
+          : current,
     );
   }
 
@@ -71,6 +79,10 @@ export function JourneySearchForm({ initial }: { initial?: JourneyFormInitial })
     else if ((minDate && date < minDate) || (maxDate && date > maxDate))
       next.date = "Date is outside the reservation window.";
     if (classes.length === 0) next.classes = "Select at least one class.";
+    else {
+      const tooMany = classLimitMessage(classes, classLimit);
+      if (tooMany) next.classes = tooMany;
+    }
     if (selectedQuotas.length === 0) next.quotas = "Select at least one quota.";
     setErrors(next);
     if (Object.keys(next).length || !from || !to) return;
@@ -184,20 +196,23 @@ export function JourneySearchForm({ initial }: { initial?: JourneyFormInitial })
       <fieldset aria-describedby={errors.classes ? "classes-error" : "classes-hint"}>
         <legend className="field-label">Classes</legend>
         <p id="classes-hint" className="mb-2 text-xs text-muted">
-          Each class is searched separately; one recommendation never mixes classes.
+          {classLimit ? `Choose up to ${classLimit}. ` : ""}Each class is searched separately and
+          shares the same request budget; one recommendation never mixes classes.
         </p>
         <div className="flex flex-wrap gap-2">
           {(meta?.supported_classes ?? []).map((option) => {
             const checked = classes.includes(option.code);
+            const disabled = !checked && classesFull;
             return (
               <label
                 key={option.code}
-                className={`inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-3 text-sm transition-colors ${checked ? "border-brand bg-brand text-brand-contrast" : "border-border bg-surface hover:bg-surface-muted"}`}
+                className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-sm transition-colors ${checked ? "cursor-pointer border-brand bg-brand text-brand-contrast" : disabled ? "cursor-not-allowed border-border bg-surface-muted text-muted" : "cursor-pointer border-border bg-surface hover:bg-surface-muted"}`}
               >
                 <input
                   type="checkbox"
                   className="sr-only"
                   checked={checked}
+                  disabled={disabled}
                   onChange={() => toggleClass(option.code)}
                 />
                 <span aria-hidden="true">{checked ? "✓" : "+"}</span>

@@ -108,7 +108,14 @@ class Settings(BaseSettings):
         default_factory=lambda: list(DEFAULT_SUPPORTED_CLASSES)
     )
     max_segments: int = Field(default=ABSOLUTE_MAX_SEGMENTS, ge=1, le=ABSOLUTE_MAX_SEGMENTS)
+    #: Trains a user may select for one search, and how many the train list pre-selects.
     search_max_trains: int = Field(default=5, ge=1, le=20)
+    search_default_trains: int = Field(default=3, ge=1, le=20)
+    #: Classes per search. Every train x class x quota is a separate combination sharing the
+    #: budget; 5 trains x 3 classes x 2 quotas = 30 = the default budget, so every direct ticket
+    #: can still be checked (docs/08 D-29).
+    search_max_classes: int = Field(default=3, ge=1, le=len(KNOWN_CLASS_CODES))
+    #: Provider availability *attempts* per search, retries included (D-28).
     search_max_availability_requests: int = Field(default=30, ge=1, le=500)
     search_deadline_seconds: float = Field(default=90.0, gt=0, le=600)
     planner_max_intermediate_stops: int = Field(default=30, ge=0, le=200)
@@ -222,6 +229,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _cross_field_rules(self) -> Self:
+        if self.search_default_trains > self.search_max_trains:
+            raise ValueError("SEARCH_DEFAULT_TRAINS must not exceed SEARCH_MAX_TRAINS")
         if self.railway_provider is ProviderName.RAILKIT and self.railkit_api_key is None:
             raise ValueError("RAILKIT_API_KEY is required when RAILWAY_PROVIDER=railkit")
         if self.environment is Environment.PRODUCTION:
@@ -243,6 +252,11 @@ class Settings(BaseSettings):
     @property
     def is_demo_mode(self) -> bool:
         return self.railway_provider is ProviderName.MOCK
+
+    @property
+    def max_classes_per_search(self) -> int:
+        """The class-selection limit actually enforced (never more than the supported classes)."""
+        return min(self.search_max_classes, len(self.supported_classes))
 
     @property
     def availability_date_policy_verified(self) -> bool:
