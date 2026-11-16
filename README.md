@@ -99,11 +99,12 @@ Every variable is documented in [`.env.example`](.env.example) and validated at 
 |---|---|---|
 | `RAILWAY_PROVIDER` | `mock` | `railkit` requires `RAILKIT_API_KEY`; production refuses `mock` |
 | `SEARCH_MAX_AVAILABILITY_REQUESTS` | `30` | provider availability attempts per search, retries included (server-enforced) |
-| `SEARCH_MAX_TRAINS` / `SEARCH_DEFAULT_TRAINS` | `5` / `3` | trains selectable / pre-selected per search |
+| `SEARCH_MAX_TRAINS` | `5` | trains selectable per search (none is pre-selected) |
 | `SEARCH_MAX_CLASSES` | `3` | classes per search (5 × 3 × GN+TQ = 30 = the default budget) |
 | `PROVIDER_MONTHLY_REQUEST_LIMIT` | `50` | global guard; set to your RailKit plan |
 | `AVAILABILITY_DATE_POLICY` | `SEGMENT_BOARDING_DATE` | date sent for segments boarding after midnight (docs/08 D-02) |
 | `AVAILABILITY_CACHE_TTL_SECONDS` | `120` | pending RailKit caching terms |
+| `RAILWAY_MAINTENANCE_*` | on, 23:45–00:20 IST | IRCTC maintenance window: no train search or availability check (HTTP 503) |
 | `RAILKIT_SUPPORTED_QUOTAS` | `GN,TQ` | quotas RailKit accepts (docs/09 Q16); drop `TQ` to disable Tatkal |
 | `TATKAL_*` | 1 day, 10:00 / 11:00 | booking window relative to the train's origin date (IST) |
 | `SEARCH_EXECUTION_MODE` | `async` | `202 Accepted` + polling; `sync` for tests |

@@ -292,6 +292,18 @@ All changes are additive; a General-only client sees the same behaviour as befor
 
 Not-queried quotas are never re-queried automatically; the client searches again after `opens_at`.
 
+## 11. IRCTC maintenance window (docs/08 D-31)
+
+Between **23:45 and 00:20 IST** (`RAILWAY_MAINTENANCE_START/END`) these routes answer
+`503 RAILWAY_MAINTENANCE` without contacting the provider: `POST /trains/search`,
+`GET /trains/{train_number}/route`, `POST /availability/check`, `POST /journeys/optimize`,
+`POST /journeys/preview`. The response carries `Retry-After` (seconds until the window ends) and
+`details` = `{window_start, window_end, timezone: "Asia/Kolkata", available_at}`.
+`GET /journeys/{search_id}`, station search and `GET /meta` keep working. `GET /meta` returns
+`railway_maintenance` = `{enabled, starts_at, ends_at, timezone, message}`.
+
+`train_numbers: []` on optimize/preview is a 400 (omit the field to search all trains).
+
 ## 10. Budget accounting, limits and search preview (docs/08 D-27…D-30)
 
 All additions have defaults, so stored snapshots and older clients keep working.
@@ -304,7 +316,7 @@ All additions have defaults, so stored snapshots and older clients keep working.
 | Search result | `coverage.request_budget` | `SEARCH_MAX_AVAILABILITY_REQUESTS`: attempts allowed per search. |
 | Search result | `coverage.combinations_not_reached` | Queryable combinations that got no check at all (budget/deadline/provider stop). `0` whenever the budget covers every direct check. |
 | Search result | `trains[].classes[].segments_queried` | Segment answers for that combination (cache hits included). |
-| `GET /meta` | `limits.default_trains_selected`, `limits.max_classes_per_search` | Mirrored by the UI; the server stays authoritative. |
+| `GET /meta` | `limits.max_classes_per_search` | Mirrored by the UI; the server stays authoritative. |
 
 `POST /api/v1/journeys/preview` takes the optimize request body and returns what a search started
 now would check — with **no** availability request (it loads only the selected trains' routes,

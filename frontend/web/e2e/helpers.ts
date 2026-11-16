@@ -36,3 +36,30 @@ export async function expectNoHorizontalScroll(page: Page) {
   );
   expect(overflow).toBeLessThanOrEqual(1);
 }
+
+/** Trains start unselected (nothing is pre-selected): tick every selectable train. */
+export async function selectAllTrains(page: Page, expected?: number) {
+  // Role locators skip hidden elements (Next keeps the previous page mounted but hidden).
+  const boxes = page.getByRole("checkbox", { name: /#\d{5}/, disabled: false });
+  await expect(boxes.first()).toBeVisible();
+  const count = await boxes.count();
+  for (let i = 0; i < count; i += 1) await boxes.nth(i).check();
+  if (expected !== undefined) {
+    await expect(page.getByRole("checkbox", { checked: true })).toHaveCount(expected);
+  }
+}
+
+/** Serve the real /meta, but with the IRCTC maintenance window switched on. */
+export async function enableMaintenanceWindow(page: Page) {
+  await page.route("**/api/v1/meta", async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    body.railway_maintenance.enabled = true;
+    await route.fulfill({ response, json: body });
+  });
+}
+
+/** An absolute instant for an IST wall-clock time on today's IST date. */
+export function istToday(clock: string): Date {
+  return new Date(`${journeyDate(0)}T${clock}+05:30`);
+}

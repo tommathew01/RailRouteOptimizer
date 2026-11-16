@@ -41,6 +41,9 @@ export default defineConfig({
         DATABASE_URL: "",
         REDIS_URL: "",
         SEARCH_EXECUTION_MODE: "async",
+        // The suite must pass at any hour; the IRCTC window is tested by faking the browser clock
+        // and the window's state in /meta (backend enforcement: tests/api/test_maintenance_window.py).
+        RAILWAY_MAINTENANCE_ENABLED: "false",
         MOCK_LATENCY_MS: "80",
         SEARCH_MAX_AVAILABILITY_REQUESTS: "40",
         API_RATE_LIMIT_SEARCH_REQUESTS: "500",

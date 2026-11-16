@@ -102,6 +102,10 @@ Docker and `make backend` read the same root `.env`; the Compose backend forward
 application setting (docs/08 D-30). After changing `.env` or code, recreate the stack with
 `docker compose --profile app up -d --build`.
 
+IRCTC maintenance (23:45–00:20 IST, docs/08 D-31): train lookups, routes, availability checks
+and new searches return `503 RAILWAY_MAINTENANCE` and spend no provider request. This is expected
+daily behaviour, not an incident. `RAILWAY_MAINTENANCE_ENABLED=false` only for testing.
+
 ## 6. Observability
 
 * Logs: one JSON object per line with `request_id`, `search_id`, provider, endpoint, outcome,

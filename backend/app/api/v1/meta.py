@@ -7,9 +7,11 @@ from fastapi import APIRouter
 from app.api.deps import ContainerDep
 from app.domain import disclaimers
 from app.domain.enums import QUOTA_ORDER, Quota, TravelClass
+from app.domain.maintenance import MaintenanceWindow
 from app.domain.quota_eligibility import class_category
 from app.schemas.meta import (
     ClassOption,
+    MaintenanceWindowOut,
     MetaResponse,
     OpeningRuleOut,
     QuotaInfo,
@@ -46,6 +48,17 @@ def _quota_options(container: ContainerDep) -> list[QuotaOption]:
     return options
 
 
+def _maintenance(container: ContainerDep) -> MaintenanceWindowOut:
+    settings = container.settings
+    window = MaintenanceWindow(settings.railway_maintenance_start, settings.railway_maintenance_end)
+    return MaintenanceWindowOut(
+        enabled=settings.railway_maintenance_enabled,
+        starts_at=window.starts.strftime("%H:%M"),
+        ends_at=window.ends.strftime("%H:%M"),
+        message=window.describe(),
+    )
+
+
 @router.get("/meta", response_model=MetaResponse, summary="Client configuration and disclaimers")
 async def meta(container: ContainerDep) -> MetaResponse:
     settings = container.settings
@@ -69,11 +82,11 @@ async def meta(container: ContainerDep) -> MetaResponse:
         limits=SearchLimits(
             max_segments=settings.max_segments,
             max_trains_per_search=settings.search_max_trains,
-            default_trains_selected=settings.search_default_trains,
             max_classes_per_search=settings.max_classes_per_search,
             max_availability_requests_per_search=settings.search_max_availability_requests,
             max_advance_booking_days=settings.max_advance_booking_days,
         ),
+        railway_maintenance=_maintenance(container),
         station_search_min_query_length=settings.station_search_min_query_length,
         stale_after_seconds=settings.stale_after_seconds,
         availability_date_policy=settings.availability_date_policy.value,

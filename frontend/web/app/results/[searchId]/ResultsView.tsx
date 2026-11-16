@@ -3,6 +3,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 
 import {
   BookingGuidance,
@@ -11,13 +12,17 @@ import {
   RecommendationCard,
   SearchProgress,
 } from "@/components/Results";
+import { MaintenanceNotice } from "@/components/MaintenanceNotice";
+import { ResultFiltersPanel } from "@/components/ResultFilters";
 import { Notice } from "@/components/StatusBits";
 import { ApiError } from "@/lib/api/client";
 import { journeySearchQuery, startOptimization } from "@/lib/api/queries";
 import type { JourneySearch } from "@/lib/api/schemas";
 import { formatCalendarDate, formatTime } from "@/lib/format";
 import { classEvaluationText, quotaList } from "@/lib/quotas";
+import { applyFilters, filterOptions, isFiltering, NO_FILTERS } from "@/lib/result-filters";
 import { journeyQueryString } from "@/lib/search-params";
+import { useRailwayMaintenance } from "@/lib/use-maintenance";
 
 const EVALUATION_TEXT: Record<string, string> = {
   EVALUATED: "Checked",
@@ -57,6 +62,15 @@ function ResultsBody({ search }: { search: JourneySearch }) {
   const router = useRouter();
   const request = search.request;
   const running = search.status === "QUEUED" || search.status === "RUNNING";
+  // Stored results stay readable during the IRCTC window; only "Check again" (a new search) waits.
+  const railway = useRailwayMaintenance();
+  // Filters work on the results already retrieved; changing them never makes a request.
+  const [filters, setFilters] = useState(NO_FILTERS);
+  const options = useMemo(() => filterOptions(search.recommendations), [search.recommendations]);
+  const shown = useMemo(
+    () => applyFilters(search.recommendations, filters),
+    [search.recommendations, filters],
+  );
   const rerun = useMutation({
     mutationFn: () =>
       startOptimization({
@@ -104,13 +118,14 @@ function ResultsBody({ search }: { search: JourneySearch }) {
             <button
               type="button"
               className="btn btn-secondary"
-              disabled={running || rerun.isPending}
+              disabled={running || rerun.isPending || railway.active}
               onClick={() => rerun.mutate()}
             >
               {rerun.isPending ? "Starting…" : "Check again"}
             </button>
           </div>
         </header>
+        {railway.active ? <MaintenanceNotice maintenance={railway.maintenance} /> : null}
         {rerun.error instanceof ApiError ? (
           <p role="alert" className="text-sm text-danger">
             {rerun.error.message}
@@ -126,20 +141,41 @@ function ResultsBody({ search }: { search: JourneySearch }) {
         {search.status === "COMPLETED" ? <CoverageNotice search={search} /> : null}
         <QuotaStatus search={search} />
 
+        {search.recommendations.length > 1 ? (
+          <ResultFiltersPanel
+            options={options}
+            filters={filters}
+            onChange={setFilters}
+            shown={shown.length}
+            total={search.recommendations.length}
+          />
+        ) : null}
+
         <section aria-labelledby="results-title" aria-live="polite">
           <h2 id="results-title" className="mb-3 text-lg font-semibold">
             {running ? "Preliminary combinations" : "Recommended combinations"}
             <span className="ml-2 text-sm font-normal text-muted">
-              ({search.recommendations.length})
+              ({isFiltering(filters) ? `${shown.length} of ${search.recommendations.length}` : search.recommendations.length})
             </span>
           </h2>
           {search.recommendations.length === 0 && !running ? (
             <p className="text-muted">
               No combination matched your filters in the segments checked.
             </p>
+          ) : shown.length === 0 && isFiltering(filters) ? (
+            <div className="card text-sm">
+              <p>No combinations match the selected filters.</p>
+              <button
+                type="button"
+                className="mt-2 font-semibold text-brand underline-offset-4 hover:underline"
+                onClick={() => setFilters(NO_FILTERS)}
+              >
+                Reset all filters
+              </button>
+            </div>
           ) : (
             <ol className="space-y-4">
-              {search.recommendations.map((rec) => (
+              {shown.map((rec) => (
                 <li key={`${rec.train_number}-${rec.travel_class}-${rec.quota}-${rec.rank}`}>
                   <RecommendationCard recommendation={rec} staleAfter={search.stale_after_seconds} />
                 </li>

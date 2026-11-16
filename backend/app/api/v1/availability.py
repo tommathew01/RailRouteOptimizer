@@ -6,7 +6,7 @@ from datetime import date
 
 from fastapi import APIRouter
 
-from app.api.deps import ContainerDep, search_rate_limit
+from app.api.deps import ContainerDep, railway_services_open, search_rate_limit
 from app.core.errors import SemanticValidationError, require
 from app.domain import disclaimers
 from app.domain.enums import Quota
@@ -64,7 +64,7 @@ def _not_queried(
     "/availability/check",
     response_model=AvailabilityCheckResponse,
     responses=ERROR_RESPONSES,
-    dependencies=[search_rate_limit],
+    dependencies=[railway_services_open, search_rate_limit],
     summary="Check one segment on one train (single ticket, one quota)",
 )
 async def check_availability(

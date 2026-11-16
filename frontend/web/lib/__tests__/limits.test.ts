@@ -1,28 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { canAdd, classLimitMessage, defaultTrainSelection, planSummary } from "@/lib/limits";
-
-const limits = {
-  max_segments: 4,
-  max_trains_per_search: 5,
-  default_trains_selected: 3,
-  max_classes_per_search: 3,
-  max_availability_requests_per_search: 30,
-  max_advance_booking_days: 60,
-};
+import { canAdd, classLimitMessage, planSummary } from "@/lib/limits";
 
 describe("search limits (mirrored from /meta, never hard-coded)", () => {
-  it("pre-selects the configured default, not the maximum", () => {
-    const trains = ["1", "2", "3", "4", "5", "6"];
-    expect([...defaultTrainSelection(trains, limits)]).toEqual(["1", "2", "3"]);
-    expect([...defaultTrainSelection(["1", "2"], limits)]).toEqual(["1", "2"]);
-    expect(
-      [...defaultTrainSelection(trains, { ...limits, default_trains_selected: 9 })],
-    ).toHaveLength(5);
-  });
-
-  it("waits for the server's limits instead of guessing", () => {
-    expect(defaultTrainSelection(["1", "2"], undefined).size).toBe(0);
+  it("leaves adding unrestricted until the server's limit is known", () => {
     expect(canAdd(99, undefined)).toBe(true); // the server stays authoritative
   });
 

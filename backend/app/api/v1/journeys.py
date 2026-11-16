@@ -7,7 +7,7 @@ import uuid
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
-from app.api.deps import ContainerDep, lookup_rate_limit, search_rate_limit
+from app.api.deps import ContainerDep, lookup_rate_limit, railway_services_open, search_rate_limit
 from app.core.errors import NotFoundError
 from app.domain.enums import SearchStatus
 from app.schemas.common import ERROR_RESPONSES
@@ -43,7 +43,7 @@ def _prepare(body: OptimizeRequest, container: ContainerDep) -> JourneyRequest:
     "/journeys/preview",
     response_model=SearchPlanResponse,
     responses=ERROR_RESPONSES,
-    dependencies=[lookup_rate_limit],
+    dependencies=[railway_services_open, lookup_rate_limit],
     summary="Combinations a search would check now and how the budget would be shared",
 )
 async def preview(body: OptimizeRequest, container: ContainerDep) -> SearchPlanResponse:
@@ -64,7 +64,7 @@ async def preview(body: OptimizeRequest, container: ContainerDep) -> SearchPlanR
         200: {"model": JourneySearchResponse, "description": "Completed (synchronous mode)"},
         202: {"model": SearchAccepted, "description": "Accepted; poll status_url"},
     },
-    dependencies=[search_rate_limit],
+    dependencies=[railway_services_open, search_rate_limit],
     summary="Find same-train segment combinations (1-4 separate tickets)",
 )
 async def optimize(body: OptimizeRequest, container: ContainerDep) -> JSONResponse:

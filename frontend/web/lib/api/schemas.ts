@@ -96,11 +96,20 @@ export const MetaSchema = z.object({
   limits: z.object({
     max_segments: z.number().int(),
     max_trains_per_search: z.number().int(),
-    default_trains_selected: z.number().int(),
     max_classes_per_search: z.number().int(),
     max_availability_requests_per_search: z.number().int(),
     max_advance_booking_days: z.number().int(),
   }),
+  /** Daily IRCTC maintenance window (IST); the server refuses railway requests inside it. */
+  railway_maintenance: z
+    .object({
+      enabled: z.boolean(),
+      starts_at: z.string(),
+      ends_at: z.string(),
+      timezone: z.literal("Asia/Kolkata"),
+      message: z.string(),
+    })
+    .optional(),
   station_search_min_query_length: z.number().int(),
   stale_after_seconds: z.number().int(),
   availability_date_policy: z.string(),

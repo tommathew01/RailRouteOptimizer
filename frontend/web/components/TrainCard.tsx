@@ -7,6 +7,7 @@ import { useId, useState } from "react";
 import { trainRouteQuery } from "@/lib/api/queries";
 import type { Train } from "@/lib/api/schemas";
 import { formatDuration } from "@/lib/format";
+import { useRailwayMaintenance } from "@/lib/use-maintenance";
 
 export function RouteTimeline({
   trainNumber,
@@ -15,7 +16,19 @@ export function RouteTimeline({
   trainNumber: string;
   highlight: [string, string];
 }) {
-  const { data, isPending, isError } = useQuery(trainRouteQuery(trainNumber));
+  const railway = useRailwayMaintenance();
+  // A route already loaded stays visible; a new one is not requested during the IRCTC window.
+  const { data, isPending, isError } = useQuery({
+    ...trainRouteQuery(trainNumber),
+    enabled: railway.open,
+  });
+  if (isPending && railway.active) {
+    return (
+      <p className="text-sm text-muted">
+        Route not loaded: {railway.maintenance?.message ?? "railway services are paused."}
+      </p>
+    );
+  }
   if (isPending) return <p className="text-sm text-muted">Loading route…</p>;
   if (isError || !data) return <p className="text-sm text-danger">Route unavailable.</p>;
   const from = data.stops.findIndex((s) => s.station_code === highlight[0]);

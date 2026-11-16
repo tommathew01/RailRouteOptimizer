@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+import { MaintenanceNotice } from "@/components/MaintenanceNotice";
 import { Notice } from "@/components/StatusBits";
 import { TrainCard } from "@/components/TrainCard";
 import { ApiError } from "@/lib/api/client";
@@ -17,10 +18,11 @@ import {
 } from "@/lib/api/queries";
 import type { SearchPlan } from "@/lib/api/schemas";
 import { formatCalendarDate } from "@/lib/format";
-import { canAdd, classLimitMessage, defaultTrainSelection, planSummary } from "@/lib/limits";
+import { canAdd, classLimitMessage, planSummary } from "@/lib/limits";
 import { quotaList } from "@/lib/quotas";
 import { parseJourneyQuery, type JourneyQuery } from "@/lib/search-params";
 import { nearbyStationPairs, pairSearchHref } from "@/lib/station-pairs";
+import { useRailwayMaintenance } from "@/lib/use-maintenance";
 
 export function TrainSelection() {
   const params = useSearchParams();
@@ -58,17 +60,20 @@ function TrainList({
 }) {
   const router = useRouter();
   const { data: meta } = useQuery(metaQuery);
-  const trains = useQuery(
-    trainSearchQuery({ source: query.from, destination: query.to, journey_date: query.date }),
-  );
+  const railway = useRailwayMaintenance();
+  // During the IRCTC window no new train lookup is made; an already loaded list stays visible.
+  const trains = useQuery({
+    ...trainSearchQuery({ source: query.from, destination: query.to, journey_date: query.date }),
+    enabled: railway.open,
+  });
   const limits = meta?.limits;
   const maxTrains = limits?.max_trains_per_search;
-  const [selected, setSelected] = useState<Set<string> | null>(null);
+  // Nothing is pre-selected: the user chooses every train (D-32).
+  const [chosen, setChosen] = useState<Set<string>>(() => new Set());
+  const [selectionError, setSelectionError] = useState<string | null>(null);
 
   const eligible = (trains.data?.trains ?? []).filter((t) => t.serves_requested_stations);
   const pairs = trains.data ? nearbyStationPairs(trains.data.trains, query) : [];
-  const chosen =
-    selected ?? defaultTrainSelection(eligible.map((t) => t.train_number), limits);
   // An old link may carry more classes than allowed: say so instead of dropping any (D-29).
   const classProblem = classLimitMessage(query.classes, limits?.max_classes_per_search);
 
@@ -83,7 +88,7 @@ function TrainList({
   };
   const preview = useQuery({
     ...searchPreviewQuery(input),
-    enabled: chosen.size > 0 && classProblem === null && eligible.length > 0,
+    enabled: chosen.size > 0 && classProblem === null && eligible.length > 0 && railway.open,
     placeholderData: keepPreviousData,
   });
 
@@ -96,7 +101,17 @@ function TrainList({
     const next = new Set(chosen);
     if (next.has(trainNumber)) next.delete(trainNumber);
     else if (canAdd(next.size, maxTrains)) next.add(trainNumber);
-    setSelected(next);
+    setChosen(next);
+    if (next.size > 0) setSelectionError(null);
+  }
+
+  function findCombinations() {
+    if (chosen.size === 0) {
+      // No request without a selection: an omitted train list would mean "all trains".
+      setSelectionError("Select at least one train to find segment combinations.");
+      return;
+    }
+    optimize.mutate();
   }
 
   const optimizeError = optimize.error instanceof ApiError ? optimize.error : null;
@@ -121,7 +136,9 @@ function TrainList({
         </Link>
       </header>
 
-      {trains.isPending ? (
+      {railway.active ? <MaintenanceNotice maintenance={railway.maintenance} /> : null}
+
+      {trains.isPending && railway.active ? null : trains.isPending ? (
         <div className="space-y-3" aria-busy="true" aria-live="polite">
           <p className="text-muted">Finding trains…</p>
           <div className="card h-24 animate-pulse" />
@@ -205,6 +222,11 @@ function TrainList({
               loading={preview.isFetching}
               error={preview.error instanceof ApiError ? preview.error.message : null}
             />
+            {selectionError ? (
+              <p role="alert" className="mb-2 text-sm text-danger">
+                {selectionError}
+              </p>
+            ) : null}
             {optimizeError ? (
               <p role="alert" className="mb-2 text-sm text-danger">
                 {optimizeError.message}
@@ -216,8 +238,8 @@ function TrainList({
             <button
               type="button"
               className="btn btn-primary w-full sm:w-auto"
-              disabled={chosen.size === 0 || classProblem !== null || optimize.isPending}
-              onClick={() => optimize.mutate()}
+              disabled={classProblem !== null || railway.active || optimize.isPending}
+              onClick={findCombinations}
             >
               {optimize.isPending
                 ? "Starting search…"

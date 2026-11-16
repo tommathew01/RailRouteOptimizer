@@ -53,12 +53,23 @@ class SearchLimits(ApiModel):
 
     max_segments: int
     max_trains_per_search: int
-    default_trains_selected: int = Field(description="Trains the train list pre-selects.")
     max_classes_per_search: int
     max_availability_requests_per_search: int = Field(
         description="Provider availability attempts per search, retries included."
     )
     max_advance_booking_days: int
+
+
+class MaintenanceWindowOut(ApiModel):
+    """Daily IRCTC maintenance window: no train search or availability check (D-31)."""
+
+    enabled: bool
+    starts_at: str = Field(description="IST wall-clock time, HH:MM (inclusive).")
+    ends_at: str = Field(
+        description="IST wall-clock time, HH:MM (exclusive); may be after midnight."
+    )
+    timezone: Literal["Asia/Kolkata"] = "Asia/Kolkata"
+    message: str
 
 
 class MetaResponse(ApiModel):
@@ -70,6 +81,7 @@ class MetaResponse(ApiModel):
     quotas: list[QuotaOption]
     supported_classes: list[ClassOption]
     limits: SearchLimits
+    railway_maintenance: MaintenanceWindowOut
     station_search_min_query_length: int
     stale_after_seconds: int
     availability_date_policy: str

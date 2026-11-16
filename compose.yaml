@@ -99,6 +99,10 @@ services:
       RAILKIT_MAX_CONCURRENCY:
       RAILKIT_FARE_CURRENCY:
       RAILKIT_SUPPORTED_QUOTAS:
+      # --- Daily IRCTC maintenance window -----------------------------------------------------
+      RAILWAY_MAINTENANCE_ENABLED:
+      RAILWAY_MAINTENANCE_START:
+      RAILWAY_MAINTENANCE_END:
       # --- Tatkal booking window ------------------------------------------------------------
       TATKAL_OPENING_DAYS_BEFORE:
       TATKAL_AC_OPENING_TIME:
@@ -112,7 +116,6 @@ services:
       SUPPORTED_CLASSES:
       MAX_SEGMENTS:
       SEARCH_MAX_TRAINS:
-      SEARCH_DEFAULT_TRAINS:
       SEARCH_MAX_CLASSES:
       SEARCH_MAX_AVAILABILITY_REQUESTS:
       SEARCH_DEADLINE_SECONDS:

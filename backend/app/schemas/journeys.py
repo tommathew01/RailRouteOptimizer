@@ -49,7 +49,10 @@ class OptimizeRequest(ApiModel):
         default=4, ge=1, le=10, description="Clamped to the server policy (at most 4)."
     )
     train_numbers: list[TrainNumber] | None = Field(
-        default=None, max_length=20, description="Optional: only optimize these trains."
+        default=None,
+        min_length=1,
+        max_length=20,
+        description="Optional: only these trains (omit for all; an empty list is refused).",
     )
     quotas: list[QuotaCode] = Field(
         default_factory=_general_only,

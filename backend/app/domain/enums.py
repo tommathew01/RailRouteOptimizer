@@ -140,3 +140,5 @@ class IncompleteReason(StrEnum):
     PROVIDER_ERRORS = "PROVIDER_ERRORS"
     SEARCH_DEADLINE_REACHED = "SEARCH_DEADLINE_REACHED"
     QUOTA_NOT_QUERIED = "QUOTA_NOT_QUERIED"
+    #: The daily IRCTC maintenance window began while the search was running (D-31).
+    RAILWAY_MAINTENANCE_WINDOW = "RAILWAY_MAINTENANCE_WINDOW"

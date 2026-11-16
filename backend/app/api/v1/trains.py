@@ -6,7 +6,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Path
 
-from app.api.deps import ContainerDep, lookup_rate_limit
+from app.api.deps import ContainerDep, lookup_rate_limit, railway_services_open
 from app.core.errors import NotFoundError
 from app.providers.errors import ProviderError, ProviderErrorCategory
 from app.schemas.catalog import (
@@ -25,7 +25,7 @@ router = APIRouter(tags=["trains"])
     "/trains/search",
     response_model=TrainSearchResponse,
     responses=ERROR_RESPONSES,
-    dependencies=[lookup_rate_limit],
+    dependencies=[railway_services_open, lookup_rate_limit],
     summary="Find trains between two stations on a date",
 )
 async def search_trains(body: TrainSearchRequest, container: ContainerDep) -> TrainSearchResponse:
@@ -47,7 +47,7 @@ async def search_trains(body: TrainSearchRequest, container: ContainerDep) -> Tr
     "/trains/{train_number}/route",
     response_model=TrainRouteResponse,
     responses=ERROR_RESPONSES,
-    dependencies=[lookup_rate_limit],
+    dependencies=[railway_services_open, lookup_rate_limit],
     summary="Ordered route of a train with validation result",
 )
 async def train_route(

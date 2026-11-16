@@ -1,6 +1,14 @@
 import { expect, test } from "@playwright/test";
 
-import { expectAccessible, expectNoHorizontalScroll, journeyDate, pickStation } from "./helpers";
+import {
+  enableMaintenanceWindow,
+  expectAccessible,
+  expectNoHorizontalScroll,
+  istToday,
+  journeyDate,
+  pickStation,
+  selectAllTrains,
+} from "./helpers";
 
 test("demo mode is labelled and the search form is accessible", async ({ page }) => {
   await page.goto("/");
@@ -31,8 +39,14 @@ test("full journey: stations → trains → same-train segment combinations", as
 
   await expect(page).toHaveURL(/\/search\?.*from=TIR.*to=TVC/);
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Tirur");
-  const trains = page.getByRole("checkbox", { checked: true });
-  await expect(trains).toHaveCount(2);
+  // Nothing is pre-selected, and proceeding without a train is explained, not sent.
+  await expect(page.getByRole("checkbox", { name: /#906/ }).first()).toBeVisible();
+  await expect(page.getByRole("checkbox", { checked: true })).toHaveCount(0);
+  await page.getByRole("button", { name: /Find segment combinations \(0 trains\)/ }).click();
+  await expect(page.getByText("Select at least one train to find segment combinations.")).toBeVisible();
+  await expect(page).toHaveURL(/\/search\?/);
+  await selectAllTrains(page, 2);
+  await expect(page.getByText("Select at least one train to find segment combinations.")).toBeHidden();
   await page.getByRole("button", { name: "View route" }).first().click();
   await expect(page.getByText("Shoranur Junction").first()).toBeVisible();
   await expectAccessible(page);
@@ -64,6 +78,7 @@ test("full journey: stations → trains → same-train segment combinations", as
 test("waitlisted segments show the provider estimate separately from status", async ({ page }) => {
   const date = journeyDate(14);
   await page.goto(`/search?from=TIR&to=TVC&date=${date}&classes=3A&rac=1&wl=1`);
+  await selectAllTrains(page);
   await page.getByRole("button", { name: /Find segment combinations/ }).click();
   await expect(page.getByRole("heading", { name: /Recommended combinations/ })).toBeVisible({
     timeout: 60_000,
@@ -80,6 +95,7 @@ test("Tatkal before its booking window: not checked, with the opening time", asy
   // 90601/90603 board TIR on their origin day, so Tatkal for a date 12 days ahead opens in 11 days.
   await page.goto(`/search?from=TIR&to=TVC&date=${journeyDate(12)}&classes=3A&quotas=GN,TQ`);
   await expect(page.getByText(/General \+ Tatkal quotas/)).toBeVisible();
+  await selectAllTrains(page);
   await page.getByRole("button", { name: /Find segment combinations/ }).click();
   await expect(page.getByRole("heading", { name: /Recommended combinations/ })).toBeVisible({
     timeout: 60_000,
@@ -97,6 +113,7 @@ test("Tatkal before its booking window: not checked, with the opening time", asy
 test("Tatkal once open is checked as its own search space", async ({ page }) => {
   // Travelling today: the train starts today, its Tatkal window opened yesterday.
   await page.goto(`/search?from=TIR&to=TVC&date=${journeyDate(0)}&classes=3A&quotas=TQ`);
+  await selectAllTrains(page);
   await page.getByRole("button", { name: /Find segment combinations/ }).click();
   await expect(page.getByRole("heading", { name: /Recommended combinations/ })).toBeVisible({
     timeout: 60_000,
@@ -164,7 +181,7 @@ test("nearby-station matches lead to a search for the stations the trains really
 
 test("the train list shows combinations and the request budget before searching", async ({ page }) => {
   await page.goto(`/search?from=TIR&to=TVC&date=${journeyDate()}&classes=3A,SL`);
-  await expect(page.getByRole("checkbox", { checked: true })).toHaveCount(2);
+  await selectAllTrains(page, 2);
   // 2 trains × 2 classes × General, against the e2e API's budget of 40 provider requests.
   await expect(
     page.getByText("4 combinations to check · budget 40 provider requests · about 10 per combination"),
@@ -192,4 +209,99 @@ test("classes are limited by the server's setting and never silently dropped", a
   await expect(page.getByText(/4 selected: 1A, 2A, 3A, SL/)).toBeVisible();
   await expect(page.getByRole("button", { name: /Find segment combinations/ })).toBeDisabled();
   await expectAccessible(page);
+});
+
+test("results can be filtered by class, quota and train without any new request", async ({ page }) => {
+  await page.goto(`/search?from=TIR&to=TVC&date=${journeyDate(0)}&classes=3A,SL&quotas=GN,TQ&rac=1&wl=1`);
+  await selectAllTrains(page, 2);
+  await page.getByRole("button", { name: /Find segment combinations/ }).click();
+  await expect(page.getByRole("heading", { name: /Recommended combinations/ })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole("status").filter({ hasText: /Partial search|Search complete/ })).toBeVisible();
+
+  const cards = page.locator("article[aria-labelledby^='rec-']");
+  const total = await cards.count();
+  expect(total).toBeGreaterThan(1);
+  const requests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/api/")) requests.push(request.url());
+  });
+  const filters = page.getByRole("region", { name: "Filter combinations" });
+
+  await filters.getByRole("group", { name: "Class" }).getByText("Sleeper (SL)").click();
+  await expect(cards.first()).toBeVisible();
+  await expect(cards.filter({ hasNotText: "Sleeper (SL) ·" })).toHaveCount(0);
+
+  await filters.getByRole("group", { name: "Quota" }).getByText("General (GN)").click();
+  await expect(cards.filter({ hasNotText: "General (GN) quota" })).toHaveCount(0);
+
+  const train = filters.getByRole("group", { name: "Train" });
+  await train.getByText(/^90601 · /).click();
+  await expect(train.getByRole("checkbox", { name: /90601/ })).toBeChecked();
+  await expect(cards.filter({ hasNotText: "#90601" })).toHaveCount(0);
+  await expect(filters.getByText(new RegExp(`Showing \\d+ of ${total}`))).toBeVisible();
+
+  await train.getByRole("searchbox", { name: /Search trains/ }).fill("no such train");
+  await expect(page.getByText("No combinations match the selected filters.")).toBeVisible();
+  await expect(cards).toHaveCount(0);
+  await page.getByRole("button", { name: "Reset all filters" }).first().click();
+  await expect(cards).toHaveCount(total);
+
+  expect(requests).toEqual([]); // filtering never asks the server
+  await expectAccessible(page);
+  await expectNoHorizontalScroll(page);
+});
+
+test.describe("IRCTC maintenance window (11:45 PM – 12:20 AM IST)", () => {
+  // A device in California: the window must follow IST, not the device's timezone.
+  test.use({ timezoneId: "America/Los_Angeles" });
+
+  test("train lookups and searches are blocked with an explanation", async ({ page }) => {
+    await enableMaintenanceWindow(page);
+    await page.clock.setFixedTime(istToday("23:50:00"));
+    const railwayCalls: string[] = [];
+    page.on("request", (request) => {
+      if (/\/api\/v1\/(trains|journeys\/(optimize|preview)|availability)/.test(request.url())) {
+        railwayCalls.push(request.url());
+      }
+    });
+    await page.goto("/");
+    const notice = page.getByText("Railway services are paused for IRCTC maintenance");
+    await expect(notice).toBeVisible();
+    await expect(page.getByText(/between 11:45 PM and 12:20 AM IST/)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Find trains" })).toBeDisabled();
+
+    await page.goto(`/search?from=TIR&to=TVC&date=${journeyDate(5)}&classes=3A`);
+    await expect(notice).toBeVisible();
+    await expect(page.getByRole("checkbox")).toHaveCount(0); // no train list was fetched
+    expect(railwayCalls).toEqual([]);
+    await expectAccessible(page);
+  });
+
+  test("everything unlocks by itself at 12:20 AM IST", async ({ page }) => {
+    await enableMaintenanceWindow(page);
+    await page.clock.install({ time: istToday("00:19:50") });
+    await page.goto(`/search?from=TIR&to=TVC&date=${journeyDate(5)}&classes=3A`);
+    const notice = page.getByText("Railway services are paused for IRCTC maintenance");
+    await expect(notice).toBeVisible();
+    await page.clock.fastForward(30_000); // 12:20:20 AM IST, no reload
+    await expect(notice).toBeHidden();
+    await selectAllTrains(page, 2);
+    await expect(page.getByRole("button", { name: /Find segment combinations/ })).toBeEnabled();
+  });
+
+  test("results already retrieved stay readable; only a new check waits", async ({ page }) => {
+    await page.goto(`/search?from=TIR&to=TVC&date=${journeyDate(9)}&classes=3A`);
+    await selectAllTrains(page, 2);
+    await page.getByRole("button", { name: /Find segment combinations/ }).click();
+    await expect(page.getByRole("status").filter({ hasText: /Partial search|Search complete|No combination/ })).toBeVisible({ timeout: 60_000 });
+    const cards = page.locator("article[aria-labelledby^='rec-']");
+    const shown = await cards.count();
+
+    await enableMaintenanceWindow(page);
+    await page.clock.setFixedTime(istToday("23:55:00"));
+    await page.reload();
+    await expect(page.getByText("Railway services are paused for IRCTC maintenance")).toBeVisible();
+    await expect(cards).toHaveCount(shown);
+    await expect(page.getByRole("button", { name: "Check again" })).toBeDisabled();
+  });
 });

@@ -20,6 +20,7 @@ from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 from app.domain.enums import KNOWN_CLASS_CODES, QUOTA_ORDER, AvailabilityDatePolicy, Quota
+from app.domain.maintenance import MaintenanceWindow
 from app.domain.quota_eligibility import OpeningRule
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
@@ -97,6 +98,12 @@ class Settings(BaseSettings):
     tatkal_ac_opening_time: time = time(10, 0)
     tatkal_non_ac_opening_time: time = time(11, 0)
 
+    # --- Daily railway maintenance window (docs/08 D-31) -------------------------------------
+    #: IRCTC allows no train search / availability check 23:45-00:20 IST; nor does RailRoute.
+    railway_maintenance_enabled: bool = True
+    railway_maintenance_start: time = time(23, 45)
+    railway_maintenance_end: time = time(0, 20)
+
     # --- Provider quota guard (set to your RailKit plan; defaults = Free tier) ----------------
     provider_window_request_limit: int = Field(default=100, ge=1)
     provider_window_seconds: int = Field(default=600, ge=1)
@@ -108,9 +115,8 @@ class Settings(BaseSettings):
         default_factory=lambda: list(DEFAULT_SUPPORTED_CLASSES)
     )
     max_segments: int = Field(default=ABSOLUTE_MAX_SEGMENTS, ge=1, le=ABSOLUTE_MAX_SEGMENTS)
-    #: Trains a user may select for one search, and how many the train list pre-selects.
+    #: Trains a user may select for one search (the train list pre-selects none).
     search_max_trains: int = Field(default=5, ge=1, le=20)
-    search_default_trains: int = Field(default=3, ge=1, le=20)
     #: Classes per search. Every train x class x quota is a separate combination sharing the
     #: budget; 5 trains x 3 classes x 2 quotas = 30 = the default budget, so every direct ticket
     #: can still be checked (docs/08 D-29).
@@ -180,6 +186,8 @@ class Settings(BaseSettings):
     @field_validator(
         "tatkal_ac_opening_time",
         "tatkal_non_ac_opening_time",
+        "railway_maintenance_start",
+        "railway_maintenance_end",
     )
     @classmethod
     def _naive_ist_time(cls, value: time) -> time:
@@ -229,8 +237,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _cross_field_rules(self) -> Self:
-        if self.search_default_trains > self.search_max_trains:
-            raise ValueError("SEARCH_DEFAULT_TRAINS must not exceed SEARCH_MAX_TRAINS")
+        if self.railway_maintenance_start == self.railway_maintenance_end:
+            raise ValueError("RAILWAY_MAINTENANCE_START and RAILWAY_MAINTENANCE_END must differ")
         if self.railway_provider is ProviderName.RAILKIT and self.railkit_api_key is None:
             raise ValueError("RAILKIT_API_KEY is required when RAILWAY_PROVIDER=railkit")
         if self.environment is Environment.PRODUCTION:
@@ -252,6 +260,12 @@ class Settings(BaseSettings):
     @property
     def is_demo_mode(self) -> bool:
         return self.railway_provider is ProviderName.MOCK
+
+    @property
+    def maintenance_window(self) -> MaintenanceWindow | None:
+        if not self.railway_maintenance_enabled:
+            return None
+        return MaintenanceWindow(self.railway_maintenance_start, self.railway_maintenance_end)
 
     @property
     def max_classes_per_search(self) -> int:

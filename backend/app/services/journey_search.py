@@ -528,7 +528,13 @@ class JourneySearchService:
     async def _explore(self, ctx: SearchContext, record: SearchRecord) -> None:
         planner = require(ctx.planner, "planner")
         last_published: float | None = None
+        window = self._settings.maintenance_window
         while not ctx.stats.hard_stop:
+            if window is not None and window.active(self._clock.now()):
+                # A search started just before 23:45 IST sends nothing more once it begins.
+                if not planner.finished:
+                    ctx.stats.stop_reason = IncompleteReason.RAILWAY_MAINTENANCE_WINDOW
+                break
             if self._clock.monotonic() >= ctx.deadline:
                 ctx.stats.deadline_hit = not planner.finished
                 break

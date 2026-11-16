@@ -83,6 +83,14 @@ class ProviderBadResponseError(AppError):
     message = "The railway data provider returned an invalid response."
 
 
+class RailwayMaintenanceError(AppError):
+    """Inside the daily IRCTC maintenance window: no new train or availability request."""
+
+    code = "RAILWAY_MAINTENANCE"
+    http_status = 503
+    message = "Railway services are temporarily unavailable (IRCTC maintenance)."
+
+
 class ServiceUnavailableError(AppError):
     code = "SERVICE_UNAVAILABLE"
     http_status = 503

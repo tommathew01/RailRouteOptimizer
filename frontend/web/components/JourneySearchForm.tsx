@@ -4,12 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
+import { MaintenanceNotice } from "@/components/MaintenanceNotice";
 import { StationAutocomplete, type StationValue } from "@/components/StationAutocomplete";
 import { metaQuery } from "@/lib/api/queries";
 import { istDate } from "@/lib/format";
 import { canAdd, classLimitMessage } from "@/lib/limits";
 import { openingRuleHint, quotaOptions } from "@/lib/quotas";
 import { canonicalQuotas, journeyQueryString } from "@/lib/search-params";
+import { useRailwayMaintenance } from "@/lib/use-maintenance";
 import { useNow } from "@/lib/use-now";
 
 type Errors = Partial<Record<"from" | "to" | "date" | "classes" | "quotas", string>>;
@@ -28,6 +30,7 @@ export function JourneySearchForm({ initial }: { initial?: JourneyFormInitial })
   const router = useRouter();
   const { data: meta, isError: metaError } = useQuery(metaQuery);
   const now = useNow(60_000);
+  const railway = useRailwayMaintenance();
 
   const [from, setFrom] = useState<StationValue | null>(initial?.from ?? null);
   const [to, setTo] = useState<StationValue | null>(initial?.to ?? null);
@@ -71,6 +74,7 @@ export function JourneySearchForm({ initial }: { initial?: JourneyFormInitial })
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (railway.active) return; // the train lookup on the next page would be refused
     const next: Errors = {};
     if (!from) next.from = "Choose a station from the list.";
     if (!to) next.to = "Choose a station from the list.";
@@ -247,7 +251,8 @@ export function JourneySearchForm({ initial }: { initial?: JourneyFormInitial })
         </p>
       </fieldset>
 
-      <button type="submit" className="btn btn-primary w-full sm:w-auto">
+      {railway.active ? <MaintenanceNotice maintenance={railway.maintenance} /> : null}
+      <button type="submit" className="btn btn-primary w-full sm:w-auto" disabled={railway.active}>
         Find trains
       </button>
     </form>

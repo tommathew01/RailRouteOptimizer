@@ -152,23 +152,31 @@ async def test_more_classes_than_the_limit_are_refused_not_truncated() -> None:
 
 
 async def test_meta_publishes_the_limits_the_server_enforces() -> None:
-    settings = make_settings(search_max_trains=4, search_default_trains=2, search_max_classes=2)
+    settings = make_settings(search_max_trains=4, search_max_classes=2)
     async with api_client(settings) as (client, _):
         limits = (await client.get("/api/v1/meta")).json()["limits"]
     assert limits["max_trains_per_search"] == 4
-    assert limits["default_trains_selected"] == 2
     assert limits["max_classes_per_search"] == 2
     assert limits["max_availability_requests_per_search"] == 30
 
 
-async def test_default_limits_are_five_trains_three_preselected_three_classes() -> None:
+async def test_default_limits_are_five_trains_and_three_classes_with_no_preselection() -> None:
     async with api_client() as (client, _):
         limits = (await client.get("/api/v1/meta")).json()["limits"]
-    assert (
-        limits["max_trains_per_search"],
-        limits["default_trains_selected"],
-        limits["max_classes_per_search"],
-    ) == (5, 3, 3)
+    assert (limits["max_trains_per_search"], limits["max_classes_per_search"]) == (5, 3)
+    assert "default_trains_selected" not in limits  # the train list starts empty (D-32)
+
+
+async def test_an_empty_train_selection_is_refused_without_provider_calls() -> None:
+    """``train_numbers`` omitted means "all trains"; an explicit empty list is a mistake."""
+    provider = five_trains()
+    async with api_client(make_settings(), provider=provider) as (client, _):
+        for path in ("/api/v1/journeys/optimize", "/api/v1/journeys/preview"):
+            response = await client.post(path, json=optimize_body(train_numbers=[]))
+            assert response.status_code == 400, response.text
+            [field] = response.json()["error"]["details"]["fields"]
+            assert field["field"] == "train_numbers"
+    assert provider.calls == Counter()
 
 
 # --- Preview ------------------------------------------------------------------------------------

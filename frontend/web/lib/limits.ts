@@ -7,16 +7,6 @@ import type { Meta } from "@/lib/api/schemas";
 
 export type SearchLimits = Meta["limits"];
 
-/** Train numbers to pre-select: the first `default_trains_selected` trains that fit the search. */
-export function defaultTrainSelection(
-  eligibleTrainNumbers: readonly string[],
-  limits: SearchLimits | undefined,
-): Set<string> {
-  if (!limits) return new Set(); // wait for the server's limits instead of guessing
-  const count = Math.min(limits.default_trains_selected, limits.max_trains_per_search);
-  return new Set(eligibleTrainNumbers.slice(0, count));
-}
-
 /** Can one more item be added to a selection of `size` under `limit`? (No limit known: yes.) */
 export function canAdd(size: number, limit: number | undefined): boolean {
   return limit === undefined || size < limit;

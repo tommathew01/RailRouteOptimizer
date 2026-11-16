@@ -95,7 +95,6 @@ def test_same_dotenv_gives_same_settings_locally_and_in_docker(
         "SEARCH_MAX_AVAILABILITY_REQUESTS": "100",
         "RAILKIT_MAX_CONCURRENCY": "8",
         "SEARCH_MAX_TRAINS": "4",
-        "SEARCH_DEFAULT_TRAINS": "2",
         "SEARCH_MAX_CLASSES": "2",
         "AVAILABILITY_CACHE_TTL_SECONDS": "60",
         "TRAIN_ROUTE_CACHE_TTL_SECONDS": "3600",

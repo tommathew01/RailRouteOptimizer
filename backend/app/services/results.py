@@ -69,6 +69,10 @@ INCOMPLETE_MESSAGES = {
     IncompleteReason.PROVIDER_AUTH_ERROR: "The provider rejected our credentials; checks stopped.",
     IncompleteReason.PROVIDER_ERRORS: "Some provider checks failed or returned unclear answers.",
     IncompleteReason.SEARCH_DEADLINE_REACHED: "The search reached its time limit.",
+    IncompleteReason.RAILWAY_MAINTENANCE_WINDOW: (
+        "The daily IRCTC maintenance window (11:45 PM - 12:20 AM IST) began during the search; "
+        "further checks stopped. Segments not checked are not shown as unavailable."
+    ),
     IncompleteReason.QUOTA_NOT_QUERIED: (
         "Some selected quotas were not checked (see the quota notes); the results cover only "
         "what was checked."
