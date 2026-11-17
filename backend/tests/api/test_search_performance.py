@@ -48,7 +48,11 @@ async def test_progress_is_republished_at_most_once_per_interval(
 
 
 def test_planner_worst_case_stays_fast() -> None:
-    """Depth-4 exploration that can never be solved, at the maximum per-search budget."""
+    """Depth-4 exploration that can never be solved, at the maximum per-search budget.
+
+    Every leg is RAC: nothing is AVAILABLE, so dominance pruning (D-34) never shortens the
+    exploration — this stays the CPU worst case.
+    """
     destination = 31
     specs = [
         ComboSpec(
@@ -64,7 +68,7 @@ def test_planner_worst_case_stays_fast() -> None:
     def oracle(edge: tuple[int, int]) -> S:
         if edge == (0, destination):
             return S.WAITLIST
-        return S.RAC if edge[1] == destination else S.AVAILABLE
+        return S.RAC
 
     planner = QueryPlanner(specs, filters=SearchFilters(allow_rac=True))
     started, made, slowest = time.perf_counter(), 0, 0.0

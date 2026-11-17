@@ -59,6 +59,11 @@ class SegmentGraph:
             raise GraphConsistencyError("edges must move forward along the route")
         self._outgoing.setdefault(edge.from_index, {})[edge.to_index] = edge
 
+    def is_available(self, from_index: int, to_index: int) -> bool:
+        """Is there a CONFIRMED/AVAILABLE segment from ``from_index`` to ``to_index``?"""
+        edge = self._outgoing.get(from_index, {}).get(to_index)
+        return edge is not None and edge.tier is StatusTier.ALL_CONFIRMED_OR_AVAILABLE
+
     def outgoing(self, index: int) -> list[SegmentEdge]:
         """Deterministic order: nearest destination first."""
         edges = self._outgoing.get(index, {})

@@ -111,8 +111,9 @@ test("Tatkal before its booking window: not checked, with the opening time", asy
 });
 
 test("Tatkal once open is checked as its own search space", async ({ page }) => {
-  // Travelling today: the train starts today, its Tatkal window opened yesterday.
-  await page.goto(`/search?from=TIR&to=TVC&date=${journeyDate(0)}&classes=3A&quotas=TQ`);
+  // Travelling today: the train starts today, its Tatkal window opened yesterday. RAC/waitlist are
+  // accepted so the (date-dependent) demo data always yields an option within the e2e budget.
+  await page.goto(`/search?from=TIR&to=TVC&date=${journeyDate(0)}&classes=3A&quotas=TQ&rac=1&wl=1`);
   await selectAllTrains(page);
   await page.getByRole("button", { name: /Find segment combinations/ }).click();
   await expect(page.getByRole("heading", { name: /Recommended combinations/ })).toBeVisible({

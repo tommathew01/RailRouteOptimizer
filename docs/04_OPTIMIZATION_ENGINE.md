@@ -145,6 +145,13 @@ Explore combinations of three intermediate stops, bounded by request budget and 
 
 A breadth-first or priority-based planner may be used. The exact query ordering must be documented and tested. Favor direct and shorter-segment combinations first.
 
+### 6b. Dominated split tickets (docs/08 D-34)
+
+If a segment a → b is CONFIRMED/AVAILABLE, no combination splits a → b into two or more smaller
+tickets (same train run, class and quota). Such candidates are pruned before their remaining
+segments are requested, and such paths are never returned. RAC/waitlist segments, and
+predictions of any value, never prune anything.
+
 ### 6a. Implemented scheduling across combinations (docs/08 D-27)
 
 Each query slot goes to the active train × class × quota combination with the smallest key

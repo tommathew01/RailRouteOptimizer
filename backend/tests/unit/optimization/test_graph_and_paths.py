@@ -147,10 +147,13 @@ def test_docs_worked_example() -> None:
 def test_fewer_segments_kept_first_when_truncated_and_order_is_deterministic() -> None:
     codes = ["TIR", "SRR", "TCR", "AWY", "ERS", "TVC"]
     every_pair = [obs(a, b, S.AVAILABLE) for i, a in enumerate(codes) for b in codes[i + 1 :]]
-    first = find_paths(graph(*every_pair), 0, 7, max_paths=3)
-    second = find_paths(graph(*reversed(every_pair)), 0, 7, max_paths=3)
+    # Enumeration mechanics only: with dominance pruning (the default) the available direct
+    # ticket would dominate every split, leaving just one path.
+    first = find_paths(graph(*every_pair), 0, 7, max_paths=3, prune_dominated=False)
+    second = find_paths(graph(*reversed(every_pair)), 0, 7, max_paths=3, prune_dominated=False)
     assert stations(first) == stations(second)
     assert [p.segment_count for p in first] == [1, 2, 2]
+    assert stations(find_paths(graph(*every_pair), 0, 7)) == [("TIR", "TVC")]
 
 
 def test_paths_only_use_route_positions_forward() -> None:

@@ -170,10 +170,14 @@ def test_adjacent_source_and_destination_only_query_direct() -> None:
 
 
 def test_combinatorial_growth_is_bounded() -> None:
-    """60 intermediates: depth-3 candidates are capped instead of exploding (C(60,2)=1770)."""
+    """60 intermediates: depth-3 candidates are capped instead of exploding (C(60,2)=1770).
+
+    First legs are RAC, not AVAILABLE: an AVAILABLE A→b would (correctly) dominate every
+    3-ticket candidate A→a→b→Z and depth 3 would never be explored (D-34).
+    """
     wide = ComboSpec(0, 0, 61, tuple(range(1, 61)), {})
     oracle: dict[tuple[int, Edge], S | None] = {(0, (0, 61)): S.WAITLIST}
-    oracle |= {(0, (0, m)): S.AVAILABLE for m in range(1, 61)}
+    oracle |= {(0, (0, m)): S.RAC for m in range(1, 61)}
     oracle |= {(0, (m, 61)): S.RAC for m in range(1, 61)}
     planner = QueryPlanner(
         [wide], filters=SearchFilters(allow_rac=True), max_combinations_per_depth=500

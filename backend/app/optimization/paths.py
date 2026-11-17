@@ -3,12 +3,17 @@
 Iterative deepening (1, 2, … ``max_segments`` edges) so that, when ``max_paths`` truncates the
 output, paths with fewer tickets are always kept first. Order within a depth is lexicographic in
 route positions, so results are deterministic.
+
+Dominated paths (a run of two or more segments where the single segment over the same stops is
+CONFIRMED/AVAILABLE in this graph — see :mod:`app.optimization.dominance`) are never produced:
+the path with that run merged always exists in the same graph and ranks strictly higher.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
+from app.optimization.dominance import last_stop_dominated
 from app.optimization.graph import SegmentEdge, SegmentGraph
 from app.optimization.policy import MAX_SEGMENTS
 
@@ -37,6 +42,7 @@ def find_paths(
     *,
     max_segments: int = MAX_SEGMENTS,
     max_paths: int = 50,
+    prune_dominated: bool = True,
 ) -> list[CandidatePath]:
     if not 1 <= max_segments <= MAX_SEGMENTS:
         raise ValueError(f"max_segments must be between 1 and {MAX_SEGMENTS}")
@@ -44,6 +50,7 @@ def find_paths(
         return []
 
     results: list[CandidatePath] = []
+    stops = [source_index]
 
     def walk(node: int, path: list[SegmentEdge], depth: int) -> None:
         if len(results) >= max_paths:
@@ -57,9 +64,12 @@ def find_paths(
                 break  # sorted ascending: nothing further can reach the destination
             if path and path[-1].to_index != edge.from_index:
                 continue  # contiguity (guaranteed by construction; kept as an explicit guard)
-            path.append(edge)
-            walk(edge.to_index, path, depth)
-            path.pop()
+            stops.append(edge.to_index)
+            if not (prune_dominated and last_stop_dominated(stops, graph.is_available)):
+                path.append(edge)
+                walk(edge.to_index, path, depth)
+                path.pop()
+            stops.pop()
 
     for depth in range(1, max_segments + 1):
         walk(source_index, [], depth)

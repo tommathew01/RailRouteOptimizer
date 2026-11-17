@@ -46,6 +46,8 @@ export default defineConfig({
         RAILWAY_MAINTENANCE_ENABLED: "false",
         MOCK_LATENCY_MS: "80",
         SEARCH_MAX_AVAILABILITY_REQUESTS: "40",
+        // Pinned so a developer's .env cannot change how the e2e searches spend their budget.
+        RAILKIT_MAX_CONCURRENCY: "4",
         API_RATE_LIMIT_SEARCH_REQUESTS: "500",
         API_RATE_LIMIT_LOOKUP_REQUESTS: "5000",
         LOG_JSON: "false",

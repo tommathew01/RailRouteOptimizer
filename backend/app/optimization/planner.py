@@ -1,4 +1,4 @@
-"""Adaptive, budget-aware availability query planner (doc 04 §6; D-04, D-27). Pure: no I/O.
+"""Adaptive, budget-aware availability query planner (doc 04 §6; D-04, D-27, D-34). No I/O.
 
 For every train x class x quota *combination* the planner explores candidate paths by increasing
 number of segments (tickets): the direct segment first, then 2-, 3- and 4-segment paths. Within a
@@ -12,6 +12,12 @@ Query order rules within a combination (documented and tested):
   unknown status) or failed is pruned without spending a request. Failed or unqueried edges are
   never treated as *unavailable*; they are simply not usable in this search.
 * Each distinct edge is requested at most once per search.
+* A candidate is also pruned, without a request, once a run of two or more of its segments is
+  covered by a single segment already known to be CONFIRMED/AVAILABLE in this combination
+  (dominance, D-34): the path with that run merged needs no new request and ranks strictly higher.
+  Because a depth is finished before the next starts, every segment that could dominate a
+  candidate is known before the candidate is reached — e.g. A→D AVAILABLE (a 2-ticket first leg)
+  rules out A→B + B→D + … before B→D is ever requested.
 * A combination stops as soon as it has a complete all-confirmed/available path: deeper paths
   can never outrank it.
 
@@ -46,6 +52,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 
 from app.domain.enums import AvailabilityStatus, StatusTier
+from app.optimization.dominance import AvailableLookup, is_dominated
 from app.optimization.policy import (
     MAX_SEGMENTS,
     EdgeEligibility,
@@ -287,10 +294,26 @@ class QueryPlanner:
         distance = (self._position[cid] - self._cursor) % len(self._order)
         return (combo.depth, combo.depth_queries, _quality_rank(combo.best_tier), distance)
 
+    @staticmethod
+    def _available(combo: _Combo) -> AvailableLookup:
+        """Known CONFIRMED/AVAILABLE segments of this combination (same train run/class/quota)."""
+        edges, tiers = combo.edges, combo.tiers
+
+        def lookup(from_index: int, to_index: int) -> bool:
+            edge = (from_index, to_index)
+            return (
+                edges.get(edge) is EdgeState.USABLE
+                and tiers.get(edge) is StatusTier.ALL_CONFIRMED_OR_AVAILABLE
+            )
+
+        return lookup
+
     def _evaluate(self, combo: _Combo, path: Path) -> tuple[_Eval, Edge | None]:
         edges = _edges(path)
         states = [combo.edge_state(e) for e in edges]
         if any(s in (EdgeState.BLOCKED, EdgeState.FAILED) for s in states):
+            return _Eval.PRUNED, None
+        if len(path) > 2 and is_dominated(path, self._available(combo)):
             return _Eval.PRUNED, None
         for edge, state in zip(edges, states, strict=True):
             if state is EdgeState.USABLE:
@@ -300,20 +323,36 @@ class QueryPlanner:
             return _Eval.WAITING, edge
         return _Eval.COMPLETE, None
 
-    def _path_tier(self, combo: _Combo, path: Path) -> StatusTier:
-        return max(combo.tiers[e] for e in _edges(path))
-
     def _best_complete_tier(self, combo: _Combo) -> StatusTier | None:
-        """Best tier among complete candidates so far (all depths explored)."""
+        """Best tier of any complete path (<= ``max_segments``) over the usable segments known.
+
+        Computed from the segments themselves rather than from the current depth's candidates:
+        with dominance pruning, the best path may be one of an earlier depth that only became
+        complete later (its last segment answered while a deeper level was being explored).
+        """
         checked = (combo.depth, combo.answers)
-        if combo.tier_checked == checked:  # no new answers and no new candidates since last scan
+        if combo.tier_checked == checked:  # no new answers since the last computation
             return combo.best_tier
         combo.tier_checked = checked
-        for path in combo.candidates:
-            if self._evaluate(combo, path)[0] is _Eval.COMPLETE:
-                tier = self._path_tier(combo, path)
-                if combo.best_tier is None or tier < combo.best_tier:
-                    combo.best_tier = tier
+        source, destination = combo.spec.source_index, combo.spec.destination_index
+        usable = [
+            (edge, combo.tiers[edge])
+            for edge, state in combo.edges.items()
+            if state is EdgeState.USABLE
+        ]
+        reached: dict[int, StatusTier] = {source: StatusTier.ALL_CONFIRMED_OR_AVAILABLE}
+        for _ in range(self._max_segments):
+            step: dict[int, StatusTier] = {}
+            for (from_index, to_index), tier in usable:
+                if from_index in reached:
+                    worst = max(reached[from_index], tier)
+                    if to_index not in step or worst < step[to_index]:
+                        step[to_index] = worst
+            if destination in step and (
+                combo.best_tier is None or step[destination] < combo.best_tier
+            ):
+                combo.best_tier = step[destination]
+            reached = step
         return combo.best_tier
 
     def _limited_nodes(
@@ -335,10 +374,13 @@ class QueryPlanner:
         if choose > len(nodes):
             return []
         scored: list[tuple[tuple[int, float, Path], Path]] = []
+        available = self._available(combo)
         for middle in itertools.combinations(nodes, choose):
             path: Path = (spec.source_index, *middle, spec.destination_index)
             states = [combo.edge_state(e) for e in _edges(path)]
             if any(s in (EdgeState.BLOCKED, EdgeState.FAILED) for s in states):
+                continue
+            if choose and is_dominated(path, available):
                 continue
             unknown = sum(1 for s in states if s is not EdgeState.USABLE)
             weight = sum(spec.node_weight.get(m, 0.0) for m in middle)

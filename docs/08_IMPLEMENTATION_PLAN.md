@@ -126,6 +126,12 @@ removed, D-26).
 | D-32 | **No train is pre-selected** on the train list; proceeding with none shows "Select at least one train…" and sends nothing. `SEARCH_DEFAULT_TRAINS` / `limits.default_trains_selected` were removed. An explicit empty `train_numbers` is now a 400 (omitting it still means "all trains"). | Product decision; an empty list used to mean "all trains" silently. |
 | D-33 | **Result filters** (class, quota, train chips + train number/name search) run in the browser on the recommendations already loaded: AND across categories, OR within one; no request, the response object is never modified, ranks are kept. Groups with a single value are hidden. | Lets users narrow results without spending provider requests. |
 
+## 6d. Redundant split tickets (2026-11-17)
+
+| # | Decision | Rationale |
+|---|---|---|
+| D-34 | **Dominance pruning.** A combination is *dominated* when two or more of its consecutive segments, from stop a to stop b, are covered by the single segment a → b that is CONFIRMED/AVAILABLE for the same train run, class and quota (`app/optimization/dominance.py`). The planner prunes such candidates before requesting their remaining segments (`QueryPlanner._evaluate/_generate`), and `find_paths` never returns them. RAC, waitlist and any prediction (even 100 %) never dominate. The planner's "solved" check now looks at every complete path over the known usable segments, not only the current depth's candidates. | Screenshots of 22504 / 22634 (2026-11-17) showed DBRG→MXN→NCB→CAPE next to DBRG→NCB→CAPE with DBRG→NCB available. The merged path uses only segments the split needs plus the available one, is no worse on status tier and prediction floor, and has fewer tickets, so it always ranks strictly higher; only total fare could favour a split, and ticket count already outranks fare. Because each depth finishes before the next, every segment that can dominate a candidate is known before the candidate is reached. Measured: same useful results in every scenario, 19–88 % fewer requests where availability allows (0 % when nothing is available); demo API case 105 → 27 requests. |
+
 ## 7. Status
 
 All seven milestones are implemented and the core RailKit contract is verified live (docs/09 §5).
