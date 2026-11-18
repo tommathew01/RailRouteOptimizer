@@ -126,6 +126,7 @@ services:
       MAX_ADVANCE_BOOKING_DAYS:
       SEARCH_EXECUTION_MODE:
       MAX_CONCURRENT_SEARCHES:
+      SEARCH_SHUTDOWN_GRACE_SECONDS:
       # --- Cache TTLs -----------------------------------------------------------------------
       AVAILABILITY_CACHE_TTL_SECONDS:
       TRAIN_SEARCH_CACHE_TTL_SECONDS:

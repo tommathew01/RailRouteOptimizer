@@ -22,11 +22,18 @@ import time
 import uuid
 from datetime import date, datetime, timedelta
 
+from app.cache import keys
+from app.cache.store import KeyValueStore, MemoryStore, StoreError
 from app.core import metrics
 from app.core.clock import Clock
 from app.core.config import Settings
 from app.core.context import search_id_var
-from app.core.errors import InvalidRequestError, SemanticValidationError, require
+from app.core.errors import (
+    InvalidRequestError,
+    SemanticValidationError,
+    ServiceUnavailableError,
+    require,
+)
 from app.domain.enums import (
     QUOTA_ORDER,
     AvailabilityDatePolicy,
@@ -102,8 +109,13 @@ class JourneySearchService:
         executor: SearchExecutor,
         provider_name: str,
         data_mode: str,
+        store: KeyValueStore | None = None,
     ) -> None:
         self._settings = settings
+        #: Shared (Redis) store for stop requests, so any replica can stop any search.
+        self._store: KeyValueStore = store or MemoryStore()
+        #: Searches executing in this process, for an immediate in-process stop.
+        self._running: dict[uuid.UUID, SearchContext] = {}
         self._clock = clock
         self._trains = trains
         self._availability = availability
@@ -235,6 +247,50 @@ class JourneySearchService:
             return await self.get(record.id) or record
         return record
 
+    async def request_stop(self, search_id: uuid.UUID) -> tuple[SearchRecord, bool] | None:
+        """Ask a running search to stop (D-35). Idempotent; ``None`` for an unknown search.
+
+        Returns the record and whether a stop was requested (``False`` once it has finished).
+        The search then sends no new availability request: requests already sent finish and
+        are kept, queued ones are withdrawn, and the results checked so far are published.
+        """
+        record = await self.get(search_id)
+        if record is None:
+            return None
+        if record.status not in (SearchStatus.QUEUED, SearchStatus.RUNNING):
+            return record, False
+        local = self._running.get(search_id)
+        if local is not None:
+            self._mark_stopped(local)
+        try:
+            await self._store.set(
+                keys.search_stop(str(search_id)),
+                b"1",
+                ttl_seconds=self._settings.search_deadline_seconds + STALE_SEARCH_GRACE_SECONDS,
+            )
+        except StoreError as error:
+            if local is None:  # it runs elsewhere and the signal cannot reach it
+                message = "The search could not be stopped. Please try again."
+                raise ServiceUnavailableError(message) from error
+            logger.warning("stop signal not shared; stopped in this process only")
+        return record, True
+
+    @staticmethod
+    def _mark_stopped(ctx: SearchContext) -> None:
+        ctx.stop_requested = True
+        ctx.budget.stop()  # refuses new checks and retries; queued requests are withdrawn
+
+    async def _stop_requested(self, ctx: SearchContext) -> bool:
+        if ctx.stop_requested:
+            return True
+        try:
+            flagged = await self._store.get(keys.search_stop(str(ctx.search_id))) is not None
+        except StoreError:
+            return False  # an unreachable store never stops a search by itself
+        if flagged:
+            self._mark_stopped(ctx)
+        return flagged
+
     def stale_before(self) -> datetime:
         grace = self._settings.search_deadline_seconds + STALE_SEARCH_GRACE_SECONDS
         return self._clock.now() - timedelta(seconds=grace)
@@ -314,6 +370,20 @@ class JourneySearchService:
             budget=SearchBudget(self._settings.search_max_availability_requests),
             deadline=self._clock.monotonic() + self._settings.search_deadline_seconds,
         )
+        self._running[record.id] = ctx
+        try:
+            if not await self._discover_and_explore(ctx, record):
+                return
+            await self._complete(ctx, record)
+        finally:
+            self._running.pop(record.id, None)
+
+    async def _discover_and_explore(self, ctx: SearchContext, record: SearchRecord) -> bool:
+        """Train discovery, routes, combinations and availability. ``False`` if it failed."""
+        request = ctx.request
+        if await self._stop_requested(ctx):  # stopped before it started: ask nothing at all
+            ctx.stats.stop_reason = IncompleteReason.STOPPED_BY_USER
+            return True
         try:
             summaries = await self._trains.search_trains(
                 request.source, request.destination, request.journey_date
@@ -321,13 +391,16 @@ class JourneySearchService:
         except ProviderError as error:
             code = FATAL_DISCOVERY_CODES.get(error.category, "PROVIDER_ERROR")
             await self._fail(record, code, "Trains could not be retrieved from the provider.")
-            return
+            return False
 
         ctx.stats.trains_found = len(summaries)
         await self._prepare_trains(ctx, summaries)
         self._prepare_combinations(ctx)
         await self._explore(ctx, record)
+        return True
 
+    async def _complete(self, ctx: SearchContext, record: SearchRecord) -> None:
+        """Rank what was checked, persist the final snapshot and recommendations."""
         ranked_with_combo = self._rank(ctx)
         recommendation_outs = results.recommendation_outs(ctx, ranked_with_combo)
         counts: dict[int, int] = {}
@@ -530,6 +603,12 @@ class JourneySearchService:
         last_published: float | None = None
         window = self._settings.maintenance_window
         while not ctx.stats.hard_stop:
+            if await self._stop_requested(ctx):
+                # User stop (D-35): no new wave. Requests of the last wave have finished and
+                # are kept; any it had to withdraw were released as "not checked".
+                if not planner.finished:
+                    ctx.stats.stop_reason = IncompleteReason.STOPPED_BY_USER
+                break
             if window is not None and window.active(self._clock.now()):
                 # A search started just before 23:45 IST sends nothing more once it begins.
                 if not planner.finished:

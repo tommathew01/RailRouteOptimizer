@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -16,12 +16,13 @@ import { MaintenanceNotice } from "@/components/MaintenanceNotice";
 import { ResultFiltersPanel } from "@/components/ResultFilters";
 import { Notice } from "@/components/StatusBits";
 import { ApiError } from "@/lib/api/client";
-import { journeySearchQuery, startOptimization } from "@/lib/api/queries";
+import { journeySearchQuery, startOptimization, stopSearch } from "@/lib/api/queries";
 import type { JourneySearch } from "@/lib/api/schemas";
 import { formatCalendarDate, formatTime } from "@/lib/format";
 import { classEvaluationText, quotaList } from "@/lib/quotas";
 import { applyFilters, filterOptions, isFiltering, NO_FILTERS } from "@/lib/result-filters";
 import { journeyQueryString } from "@/lib/search-params";
+import { resultsHeading } from "@/lib/status";
 import { useRailwayMaintenance } from "@/lib/use-maintenance";
 
 const EVALUATION_TEXT: Record<string, string> = {
@@ -55,7 +56,8 @@ export function ResultsView({ searchId }: { searchId: string }) {
       </Notice>
     );
   }
-  return <ResultsBody search={data} />;
+  // Keyed by search: a new search (e.g. "Check again") never inherits stop or filter state.
+  return <ResultsBody key={data.search_id} search={data} />;
 }
 
 function ResultsBody({ search }: { search: JourneySearch }) {
@@ -71,6 +73,13 @@ function ResultsBody({ search }: { search: JourneySearch }) {
     () => applyFilters(search.recommendations, filters),
     [search.recommendations, filters],
   );
+  const queryClient = useQueryClient();
+  // Stops the search on the server (no new provider requests); polling then shows the result.
+  const stop = useMutation({
+    mutationFn: () => stopSearch(search.search_id),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: journeySearchQuery(search.search_id).queryKey }),
+  });
   const rerun = useMutation({
     mutationFn: () =>
       startOptimization({
@@ -132,7 +141,14 @@ function ResultsBody({ search }: { search: JourneySearch }) {
           </p>
         ) : null}
 
-        {running ? <SearchProgress search={search} /> : null}
+        {running ? (
+          <SearchProgress
+            search={search}
+            onStop={() => stop.mutate()}
+            stopping={stop.isPending || stop.data?.stop_requested === true}
+            stopError={stop.error instanceof ApiError ? stop.error.message : null}
+          />
+        ) : null}
         {search.status === "FAILED" ? (
           <Notice tone="danger" title="The search did not complete">
             {search.error?.message ?? "Please try again."}
@@ -153,7 +169,7 @@ function ResultsBody({ search }: { search: JourneySearch }) {
 
         <section aria-labelledby="results-title" aria-live="polite">
           <h2 id="results-title" className="mb-3 text-lg font-semibold">
-            {running ? "Preliminary combinations" : "Recommended combinations"}
+            {resultsHeading(search)}
             <span className="ml-2 text-sm font-normal text-muted">
               ({isFiltering(filters) ? `${shown.length} of ${search.recommendations.length}` : search.recommendations.length})
             </span>

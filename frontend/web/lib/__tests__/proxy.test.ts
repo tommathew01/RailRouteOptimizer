@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   UnsafePathError,
+  backendBaseUrl,
   buildBackendUrl,
   buildForwardHeaders,
   pickResponseHeaders,
@@ -42,5 +43,31 @@ describe("header filtering", () => {
     const picked = pickResponseHeaders(new Headers({ "content-type": "application/json", "set-cookie": "x=1" }));
     expect(picked.get("cache-control")).toBe("no-store");
     expect(picked.has("set-cookie")).toBe(false);
+  });
+});
+
+describe("backendBaseUrl", () => {
+  it("keeps full URLs and adds http:// to a bare host:port (Render private service)", () => {
+    expect(backendBaseUrl("http://backend:8000")).toBe("http://backend:8000");
+    expect(backendBaseUrl("https://api.example.com")).toBe("https://api.example.com");
+    expect(backendBaseUrl("railroute-backend-x1y2:8000")).toBe("http://railroute-backend-x1y2:8000");
+    expect(backendBaseUrl(" ")).toBe("http://127.0.0.1:8000");
+    expect(backendBaseUrl(undefined)).toBe("http://127.0.0.1:8000");
+    expect(buildBackendUrl(backendBaseUrl("backend:8000"), ["meta"], "").toString()).toBe(
+      "http://backend:8000/api/v1/meta",
+    );
+  });
+});
+
+describe("operator authorization", () => {
+  const incoming = new Headers({ authorization: "Bearer ops-token", accept: "application/json" });
+
+  it("is forwarded only to the token-protected operator endpoints", () => {
+    expect(buildForwardHeaders(incoming, ["ops", "provider-quota"]).get("authorization")).toBe(
+      "Bearer ops-token",
+    );
+    expect(buildForwardHeaders(incoming, ["metrics"]).get("authorization")).toBe("Bearer ops-token");
+    expect(buildForwardHeaders(incoming, ["journeys", "optimize"]).has("authorization")).toBe(false);
+    expect(buildForwardHeaders(incoming).has("authorization")).toBe(false);
   });
 });

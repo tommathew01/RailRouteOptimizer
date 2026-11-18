@@ -389,6 +389,14 @@ export const SearchPlanSchema = z.object({
   explanation: z.array(z.string()),
 });
 
+export const SearchStopSchema = z.object({
+  search_id: z.string(),
+  status: SearchStatusSchema,
+  stop_requested: z.boolean(),
+  status_url: z.string(),
+  message: z.string(),
+});
+
 export const SearchAcceptedSchema = z.object({
   search_id: z.string(),
   status: SearchStatusSchema,

@@ -128,6 +128,8 @@ class SearchCompleteness(StrEnum):
     PARTIAL_TIMEOUT = "PARTIAL_TIMEOUT"
     #: Some selected quota combinations were deliberately not queried (e.g. Tatkal not open yet).
     PARTIAL_QUOTA_NOT_QUERIED = "PARTIAL_QUOTA_NOT_QUERIED"
+    #: The user stopped the search; results are the best of what was checked (D-35).
+    PARTIAL_STOPPED = "PARTIAL_STOPPED"
     NO_PATH_FOUND = "NO_PATH_FOUND"
     NO_PATH_FOUND_PARTIAL = "NO_PATH_FOUND_PARTIAL"
 
@@ -142,3 +144,5 @@ class IncompleteReason(StrEnum):
     QUOTA_NOT_QUERIED = "QUOTA_NOT_QUERIED"
     #: The daily IRCTC maintenance window began while the search was running (D-31).
     RAILWAY_MAINTENANCE_WINDOW = "RAILWAY_MAINTENANCE_WINDOW"
+    #: The user pressed "Stop search" (D-35).
+    STOPPED_BY_USER = "STOPPED_BY_USER"

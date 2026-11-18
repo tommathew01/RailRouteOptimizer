@@ -175,9 +175,13 @@ class Gate:
         self.retries = retries
         self.attempts = 0
         self.asked = 0
+        self.withdrawn = False
 
     def attempt_started(self) -> None:
         self.attempts += 1
+
+    def may_start(self) -> bool:
+        return not self.withdrawn
 
     async def allow_retry(self) -> bool:
         self.asked += 1

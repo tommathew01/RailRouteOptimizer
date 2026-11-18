@@ -120,6 +120,18 @@ class SearchPlanResponse(ApiModel):
     explanation: list[str]
 
 
+class SearchStopResponse(ApiModel):
+    """Answer to "Stop search" (D-35). Poll ``status_url`` for the final, partial results."""
+
+    search_id: uuid.UUID
+    status: Literal["QUEUED", "RUNNING", "COMPLETED", "FAILED"]
+    stop_requested: bool = Field(
+        description="True when the running search was asked to stop; False if it had finished."
+    )
+    status_url: str
+    message: str
+
+
 class SearchAccepted(ApiModel):
     search_id: uuid.UUID
     status: Literal["QUEUED", "RUNNING", "COMPLETED", "FAILED"]

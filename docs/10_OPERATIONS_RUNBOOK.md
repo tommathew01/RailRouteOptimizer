@@ -27,6 +27,7 @@ Browser ──HTTPS──▶ Load balancer / reverse proxy (TLS, sets X-Forwarde
 | Frontend | `node server.js` (Next.js standalone) | `GET /` |
 
 Local equivalent: `docker compose --profile app up -d --build` (see `compose.yaml`).
+Hosted production (Render, `render.yaml`) and a step-by-step guide: `11_PRODUCTION_DEPLOYMENT.md`.
 
 ## 2. Configuration
 
@@ -72,7 +73,9 @@ Measured behaviour of the Next.js proxy: when the request has no `X-Forwarded-Fo
 the socket peer; when the request already has one, it is passed through **unchanged**. Therefore:
 
 * **Production** — put a load balancer that appends or overwrites `X-Forwarded-For` in front of
-  Next, keep the backend on a private network, and set `TRUSTED_PROXY_HOPS=1`.
+  Next, keep the backend on a private network, and set `TRUSTED_PROXY_HOPS=1`. Platforms differ:
+  measure with `GET /api/v1/ops/client-address` (Bearer `METRICS_TOKEN`) through the public URL
+  and choose the value that yields your own IP (docs/11 §6).
 * **Compose (`app` profile)** — the backend defaults to `1` (`COMPOSE_TRUSTED_PROXY_HOPS`) because
   it is only reached through Next. Without a load balancer a client can spoof the header and evade
   the *API* rate limit — acceptable on localhost, not on the internet.

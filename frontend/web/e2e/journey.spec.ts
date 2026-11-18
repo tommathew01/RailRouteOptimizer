@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { expect, test } from "@playwright/test";
 
 import {
@@ -54,7 +56,7 @@ test("full journey: stations → trains → same-train segment combinations", as
 
   await page.getByRole("button", { name: /Find segment combinations \(2 trains\)/ }).click();
   await expect(page).toHaveURL(/\/results\/[0-9a-f-]{36}$/);
-  await expect(page.getByRole("heading", { name: /Recommended combinations/ })).toBeVisible({
+  await expect(page.getByRole("heading", { name: /Top recommendations|Best combinations/ })).toBeVisible({
     timeout: 60_000,
   });
 
@@ -80,7 +82,7 @@ test("waitlisted segments show the provider estimate separately from status", as
   await page.goto(`/search?from=TIR&to=TVC&date=${date}&classes=3A&rac=1&wl=1`);
   await selectAllTrains(page);
   await page.getByRole("button", { name: /Find segment combinations/ }).click();
-  await expect(page.getByRole("heading", { name: /Recommended combinations/ })).toBeVisible({
+  await expect(page.getByRole("heading", { name: /Top recommendations|Best combinations/ })).toBeVisible({
     timeout: 60_000,
   });
   const waitlisted = page.locator("article", { hasText: "Includes waitlist" }).first();
@@ -97,7 +99,7 @@ test("Tatkal before its booking window: not checked, with the opening time", asy
   await expect(page.getByText(/General \+ Tatkal quotas/)).toBeVisible();
   await selectAllTrains(page);
   await page.getByRole("button", { name: /Find segment combinations/ }).click();
-  await expect(page.getByRole("heading", { name: /Recommended combinations/ })).toBeVisible({
+  await expect(page.getByRole("heading", { name: /Top recommendations|Best combinations/ })).toBeVisible({
     timeout: 60_000,
   });
   const quotas = page.getByRole("region", { name: "Quotas" });
@@ -116,7 +118,7 @@ test("Tatkal once open is checked as its own search space", async ({ page }) => 
   await page.goto(`/search?from=TIR&to=TVC&date=${journeyDate(0)}&classes=3A&quotas=TQ&rac=1&wl=1`);
   await selectAllTrains(page);
   await page.getByRole("button", { name: /Find segment combinations/ }).click();
-  await expect(page.getByRole("heading", { name: /Recommended combinations/ })).toBeVisible({
+  await expect(page.getByRole("heading", { name: /Top recommendations|Best combinations/ })).toBeVisible({
     timeout: 60_000,
   });
   const quotas = page.getByRole("region", { name: "Quotas" });
@@ -216,7 +218,7 @@ test("results can be filtered by class, quota and train without any new request"
   await page.goto(`/search?from=TIR&to=TVC&date=${journeyDate(0)}&classes=3A,SL&quotas=GN,TQ&rac=1&wl=1`);
   await selectAllTrains(page, 2);
   await page.getByRole("button", { name: /Find segment combinations/ }).click();
-  await expect(page.getByRole("heading", { name: /Recommended combinations/ })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole("heading", { name: /Top recommendations|Best combinations/ })).toBeVisible({ timeout: 60_000 });
   await expect(page.getByRole("status").filter({ hasText: /Partial search|Search complete/ })).toBeVisible();
 
   const cards = page.locator("article[aria-labelledby^='rec-']");
@@ -305,4 +307,38 @@ test.describe("IRCTC maintenance window (11:45 PM – 12:20 AM IST)", () => {
     await expect(cards).toHaveCount(shown);
     await expect(page.getByRole("button", { name: "Check again" })).toBeDisabled();
   });
+});
+
+test("a running search can be stopped; results found so far stay", async ({ page }) => {
+  // The server-side stop is covered by backend tests; here the UI flow is driven with snapshots.
+  const finished = JSON.parse(readFileSync("test/fixtures/journey-search.json", "utf8"));
+  const found = finished.recommendations.slice(0, 3);
+  const id: string = finished.search_id;
+  const running = { ...finished, status: "RUNNING", search_completeness: null, incomplete_reason: null, completed_at: null, recommendations: found };
+  const stopped = { ...finished, status: "COMPLETED", search_completeness: "PARTIAL_STOPPED", incomplete_reason: "STOPPED_BY_USER", recommendations: found };
+  let stopCalls = 0;
+  await page.route(`**/api/v1/journeys/${id}/stop`, (route) => {
+    stopCalls += 1;
+    return route.fulfill({
+      status: 202,
+      json: { search_id: id, status: "RUNNING", stop_requested: true, status_url: `/api/v1/journeys/${id}`, message: "Stopping" },
+    });
+  });
+  await page.route(`**/api/v1/journeys/${id}`, (route) => route.fulfill({ json: stopCalls ? stopped : running }));
+
+  await page.goto(`/results/${id}`);
+  await expect(page.getByText("Checking segment availability…")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Preliminary combinations\s*\(3\)/ })).toBeVisible();
+  const stop = page.getByRole("button", { name: "Stop search" });
+  await expect(stop).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Check again" })).toBeDisabled(); // still running
+
+  await stop.click();
+  await expect(page.getByText("Search stopped. Showing 3 combinations found so far.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Best combinations found before you stopped\s*\(3\)/ })).toBeVisible();
+  await expect(page.locator("article[aria-labelledby^='rec-']")).toHaveCount(3); // nothing lost
+  await expect(page.getByRole("button", { name: "Stop search" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Check again" })).toBeEnabled();
+  expect(stopCalls).toBe(1);
+  await expectAccessible(page);
 });

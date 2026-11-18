@@ -16,6 +16,7 @@ from app.schemas.journeys import (
     OptimizeRequest,
     SearchAccepted,
     SearchPlanResponse,
+    SearchStopResponse,
 )
 from app.services.journey_search import JourneySearchService
 from app.services.results import plan_response, status_url
@@ -96,3 +97,36 @@ async def get_search(search_id: uuid.UUID, container: ContainerDep) -> JourneySe
     if record is None:
         raise NotFoundError("Search not found.", code="SEARCH_NOT_FOUND")
     return JourneySearchService.response_for(record)
+
+
+@router.post(
+    "/journeys/{search_id}/stop",
+    response_model=SearchStopResponse,
+    status_code=202,
+    responses={
+        **ERROR_RESPONSES,
+        200: {"model": SearchStopResponse, "description": "Already finished: nothing to stop"},
+        202: {"model": SearchStopResponse, "description": "Stop requested; poll status_url"},
+    },
+    dependencies=[lookup_rate_limit],
+    summary="Stop a running search and keep the results checked so far",
+)
+async def stop_search(search_id: uuid.UUID, container: ContainerDep) -> JSONResponse:
+    """No new availability request is sent after this; requests already sent finish and are
+    kept. Idempotent: repeated calls change nothing. Never starts another search."""
+    outcome = await container.journeys.request_stop(search_id)
+    if outcome is None:
+        raise NotFoundError("Search not found.", code="SEARCH_NOT_FOUND")
+    record, requested = outcome
+    body = SearchStopResponse(
+        search_id=record.id,
+        status=record.status.value,
+        stop_requested=requested,
+        status_url=status_url(record.id),
+        message=(
+            "Stopping: no new availability checks will be sent; results so far are kept."
+            if requested
+            else "The search had already finished; nothing was stopped."
+        ),
+    )
+    return JSONResponse(body.model_dump(mode="json"), status_code=202 if requested else 200)

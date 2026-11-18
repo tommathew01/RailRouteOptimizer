@@ -2,7 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # The repository's default branch is `master`. Render deploys a commit only after these
+    # checks pass (render.yaml: autoDeployTrigger: checksPass).
+    branches: [master, main]
   pull_request:
 
 permissions:

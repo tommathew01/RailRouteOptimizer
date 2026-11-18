@@ -69,6 +69,10 @@ INCOMPLETE_MESSAGES = {
     IncompleteReason.PROVIDER_AUTH_ERROR: "The provider rejected our credentials; checks stopped.",
     IncompleteReason.PROVIDER_ERRORS: "Some provider checks failed or returned unclear answers.",
     IncompleteReason.SEARCH_DEADLINE_REACHED: "The search reached its time limit.",
+    IncompleteReason.STOPPED_BY_USER: (
+        "You stopped the search. The combinations shown are the best of the segments checked so "
+        "far; segments that were not checked may hold better options."
+    ),
     IncompleteReason.RAILWAY_MAINTENANCE_WINDOW: (
         "The daily IRCTC maintenance window (11:45 PM - 12:20 AM IST) began during the search; "
         "further checks stopped. Segments not checked are not shown as unavailable."
@@ -107,7 +111,9 @@ def completeness(
 ) -> tuple[SearchCompleteness, IncompleteReason | None]:
     stats = ctx.stats
     reason: IncompleteReason | None
-    if stats.deadline_hit:
+    if stats.stop_reason is IncompleteReason.STOPPED_BY_USER:
+        state, reason = SearchCompleteness.PARTIAL_STOPPED, IncompleteReason.STOPPED_BY_USER
+    elif stats.deadline_hit:
         state, reason = SearchCompleteness.PARTIAL_TIMEOUT, IncompleteReason.SEARCH_DEADLINE_REACHED
     elif stats.stop_reason in (
         IncompleteReason.AVAILABILITY_REQUEST_BUDGET_REACHED,

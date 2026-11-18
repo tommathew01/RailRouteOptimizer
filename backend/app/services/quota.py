@@ -152,11 +152,17 @@ class SearchBudget:
         self.retries = 0
         #: Retries the provider client wanted but this budget could not pay for.
         self.retries_refused = 0
+        #: Set when the user stops the search: nothing new may start (D-35).
+        self.stopped = False
         self._lock = asyncio.Lock()
+
+    def stop(self) -> None:
+        """Refuse every new check, retry and not-yet-sent attempt from now on (idempotent)."""
+        self.stopped = True
 
     async def try_consume(self, units: int = 1) -> bool:
         async with self._lock:
-            if self.used + units > self.limit:
+            if self.stopped or self.used + units > self.limit:
                 return False
             self.used += units
             return True
@@ -192,6 +198,9 @@ class BudgetedCall:
 
     def attempt_started(self) -> None:
         self.attempts += 1
+
+    def may_start(self) -> bool:
+        return not self._budget.stopped
 
     async def allow_retry(self) -> bool:
         if await self._budget.try_consume():

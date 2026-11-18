@@ -14,6 +14,7 @@ from __future__ import annotations
 import logging
 import time
 import uuid
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import date
 
@@ -26,7 +27,7 @@ from app.core import metrics
 from app.core.clock import Clock
 from app.domain.enums import AvailabilityStatus, SegmentQueryOutcome
 from app.domain.models import AvailabilityQuery, SegmentKey, SegmentObservation
-from app.providers.base import RailwayProvider, call_gate
+from app.providers.base import ProviderCallStoppedError, RailwayProvider, call_gate
 from app.providers.errors import ProviderError, ProviderErrorCategory
 from app.repositories.base import Persistence
 from app.repositories.records import SegmentRunRecord
@@ -57,8 +58,17 @@ class SegmentCheckResult:
         return self.outcome is SegmentQueryOutcome.SUCCESS and self.observation is not None
 
 
-class _BudgetRefusedError(Exception):
-    pass
+class _NotAskedError(Exception):
+    """This search did not ask the provider (budget refused it, or the search was stopped).
+
+    Carries the refusing budget: a *different* search sharing the in-process single-flight
+    receives the same exception, and must then ask for itself instead of inheriting another
+    user's refusal.
+    """
+
+    def __init__(self, budget: SearchBudget | None) -> None:
+        super().__init__("not asked")
+        self.budget = budget
 
 
 def run_record(
@@ -115,7 +125,7 @@ class AvailabilityService:
             if budget is not None:
                 call = await budget.start_call()
                 if call is None:
-                    raise _BudgetRefusedError
+                    raise _NotAskedError(budget)
             key = request.key
             query = AvailabilityQuery(
                 train_number=key.train_number,
@@ -134,6 +144,9 @@ class AvailabilityService:
             except ProviderError as error:
                 reached = error.category is not ProviderErrorCategory.QUOTA_EXHAUSTED
                 raise
+            except ProviderCallStoppedError:
+                reached = False  # withdrawn before it was sent: costs nothing
+                raise _NotAskedError(budget) from None
             finally:
                 if call is not None:
                     await call.settle(reached_provider=reached)
@@ -150,12 +163,9 @@ class AvailabilityService:
             return observation
 
         try:
-            observation, shared = await self._flight.run(
-                cache_key,
-                compute=compute,
-                load_cached=lambda: self._cache.get(cache_key, _OBSERVATION),
-            )
-        except _BudgetRefusedError:
+            observation, shared = await self._run_flight(cache_key, compute, budget)
+        except _NotAskedError:
+            # Never asked: the segment stays "not checked" (never "unavailable").
             return SegmentCheckResult(request, None)
         except ProviderError as error:
             if error.category is ProviderErrorCategory.INVALID_RESPONSE:
@@ -182,3 +192,23 @@ class AvailabilityService:
             cache_hit=shared,
             latency_ms=None if shared else round((time.perf_counter() - started) * 1000, 1),
         )
+
+    async def _run_flight(
+        self,
+        cache_key: str,
+        compute: Callable[[], Awaitable[SegmentObservation]],
+        budget: SearchBudget | None,
+    ) -> tuple[SegmentObservation, bool]:
+        """Single-flight, but another search's refusal (budget, stop) is never inherited."""
+        for _ in range(3):
+            try:
+                return await self._flight.run(
+                    cache_key,
+                    compute=compute,
+                    load_cached=lambda: self._cache.get(cache_key, _OBSERVATION),
+                )
+            except _NotAskedError as refusal:
+                if refusal.budget is budget:
+                    raise
+                # The leader belonged to another search and never asked: ask ourselves.
+        return await compute(), False

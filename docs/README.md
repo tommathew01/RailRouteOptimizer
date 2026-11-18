@@ -19,6 +19,7 @@ Timezone: Asia/Kolkata for railway journey dates and displayed timestamps
 - `08_IMPLEMENTATION_PLAN.md` — milestones, decisions taken where this pack was silent, conflicts found.
 - `09_RAILKIT_CONTRACT_VERIFICATION.md` — RailKit contract evidence, open questions, live-check procedure.
 - `10_OPERATIONS_RUNBOOK.md` — deployment, configuration, incident handling (added in Milestone 7).
+- `11_PRODUCTION_DEPLOYMENT.md` — hosting assessment, platform comparison, Render Blueprint guide, production variables and verification checklist.
 
 The original pack also referenced `agent/AI_CODING_AGENT_MASTER_PROMPT.md` and
 `agent/IMPLEMENTATION_CHECKLIST.md`; those files were not part of the repository (the master prompt

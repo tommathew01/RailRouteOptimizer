@@ -51,6 +51,11 @@ The default `RAILWAY_PROVIDER=mock` serves **simulated** trains and availability
 `POSTGRES_HOST_PORT` / `REDIS_HOST_PORT` in `.env` (e.g. `55432` / `56379`) and use the same ports in
 `DATABASE_URL` / `REDIS_URL`.
 
+## Hosting in production
+
+See [`docs/11_PRODUCTION_DEPLOYMENT.md`](docs/11_PRODUCTION_DEPLOYMENT.md): Render Blueprint
+([`render.yaml`](render.yaml)), costs, step-by-step guide and verification checklist.
+
 ## Using live RailKit data
 
 1. Get an API key from the RailKit dashboard and put it in `.env` as `RAILKIT_API_KEY=…`.
@@ -100,6 +105,7 @@ Every variable is documented in [`.env.example`](.env.example) and validated at 
 | `RAILWAY_PROVIDER` | `mock` | `railkit` requires `RAILKIT_API_KEY`; production refuses `mock` |
 | `SEARCH_MAX_AVAILABILITY_REQUESTS` | `30` | provider availability attempts per search, retries included (server-enforced) |
 | `SEARCH_MAX_TRAINS` | `5` | trains selectable per search (none is pre-selected) |
+| `MAX_RECOMMENDATIONS` | `10` | results shown: the top N of the ranking |
 | `SEARCH_MAX_CLASSES` | `3` | classes per search (5 × 3 × GN+TQ = 30 = the default budget) |
 | `PROVIDER_MONTHLY_REQUEST_LIMIT` | `50` | global guard; set to your RailKit plan |
 | `AVAILABILITY_DATE_POLICY` | `SEGMENT_BOARDING_DATE` | date sent for segments boarding after midnight (docs/08 D-02) |

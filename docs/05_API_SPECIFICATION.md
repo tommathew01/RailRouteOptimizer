@@ -292,6 +292,16 @@ All changes are additive; a General-only client sees the same behaviour as befor
 
 Not-queried quotas are never re-queried automatically; the client searches again after `opens_at`.
 
+## 12. Stop a search (docs/08 D-35)
+
+`POST /api/v1/journeys/{search_id}/stop` → `202` `{search_id, status, stop_requested: true,
+status_url, message}` while the search is QUEUED/RUNNING; `200` with `stop_requested: false` once
+it has finished (nothing changes); `404 SEARCH_NOT_FOUND`. Idempotent. No availability request is
+sent after the stop; requests already sent finish and are kept. Poll `status_url`: the search
+ends `COMPLETED` with `search_completeness = PARTIAL_STOPPED` (or `NO_PATH_FOUND_PARTIAL`) and
+`incomplete_reason = STOPPED_BY_USER`; `recommendations` are the top `MAX_RECOMMENDATIONS` (10) of
+the segments checked.
+
 ## 11. IRCTC maintenance window (docs/08 D-31)
 
 Between **23:45 and 00:20 IST** (`RAILWAY_MAINTENANCE_START/END`) these routes answer

@@ -88,3 +88,5 @@ class SearchContext:
     stats: SearchStats = field(default_factory=SearchStats)
     planner: QueryPlanner | None = None
     warnings: list[str] = field(default_factory=list)
+    #: The user asked to stop (seen locally or via the shared store); never reset (D-35).
+    stop_requested: bool = False

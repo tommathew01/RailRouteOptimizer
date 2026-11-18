@@ -38,5 +38,10 @@ def station_code(provider: str, code: str) -> str:
     return f"station-code:{provider}:{code.upper()}"
 
 
+def search_stop(search_id: str) -> str:
+    """Set when a user stops a search; read by whichever process runs it (docs/08 D-35)."""
+    return f"search-stop:{search_id}"
+
+
 def lock(key: str) -> str:
     return f"lock:{key}"

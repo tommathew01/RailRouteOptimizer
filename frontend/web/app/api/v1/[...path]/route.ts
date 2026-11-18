@@ -2,13 +2,14 @@ import type { NextRequest } from "next/server";
 
 import {
   UnsafePathError,
+  backendBaseUrl,
   buildBackendUrl,
   buildForwardHeaders,
   errorEnvelope,
   pickResponseHeaders,
 } from "@/lib/proxy";
 
-const BACKEND_URL = process.env.BACKEND_INTERNAL_URL ?? "http://127.0.0.1:8000";
+const BACKEND_URL = backendBaseUrl(process.env.BACKEND_INTERNAL_URL);
 const TIMEOUT_MS = 30_000;
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -43,7 +44,7 @@ async function forward(
   try {
     const upstream = await fetch(target, {
       method: request.method,
-      headers: buildForwardHeaders(request.headers),
+      headers: buildForwardHeaders(request.headers, path),
       body,
       cache: "no-store",
       redirect: "manual",

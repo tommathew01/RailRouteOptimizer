@@ -92,3 +92,20 @@ async def test_live_mode_is_labelled_live() -> None:
         meta = (await client.get("/api/v1/meta")).json()
     assert meta["data_mode"] == "LIVE"
     assert not any("Demo mode" in d for d in meta["disclaimers"])
+
+
+async def test_client_address_diagnostic_shows_the_chain_used_for_rate_limits() -> None:
+    """Operators call this through the public URL to choose TRUSTED_PROXY_HOPS (docs/11)."""
+    settings = make_settings(metrics_token="ops-token-123456", trusted_proxy_hops=2)
+    chain = "198.51.100.7, 203.0.113.9, 192.0.2.1"
+    async with api_client(settings) as (client, _):
+        denied = await client.get("/api/v1/ops/client-address", headers={"X-Forwarded-For": chain})
+        shown = await client.get(
+            "/api/v1/ops/client-address",
+            headers={"Authorization": "Bearer ops-token-123456", "X-Forwarded-For": chain},
+        )
+    assert denied.status_code == 401
+    body = shown.json()
+    assert body["x_forwarded_for"] == ["198.51.100.7", "203.0.113.9", "192.0.2.1"]
+    assert body["trusted_proxy_hops"] == 2
+    assert body["client_address"] == "203.0.113.9"  # second from the right

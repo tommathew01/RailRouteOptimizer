@@ -1,0 +1,140 @@
+# RailRoute Optimizer — Render Blueprint (infrastructure as code).
+# Guide: docs/11_PRODUCTION_DEPLOYMENT.md · decision: docs/08 D-37.
+#
+#   Browser ─HTTPS─▶ railroute-web (Next.js, public) ─private network─▶ railroute-backend (FastAPI)
+#                                                                        ├─ railroute-db (PostgreSQL)
+#                                                                        ├─ railroute-cache (Key Value)
+#                                                                        └─ RailKit API
+#   railroute-retention: daily data-retention job (backend image).
+#
+# No secret is stored here. Variables marked `sync: false` are asked for once, when the Blueprint
+# is first created; `generateValue` creates a random secret. Region: Singapore (closest to India).
+
+envVarGroups:
+  # Non-secret settings shared by the backend and the retention job. Everything not listed here
+  # uses the defaults in backend/app/core/config.py (documented in .env.example).
+  - name: railroute-backend-settings
+    envVars:
+      - key: ENVIRONMENT
+        value: production # refuses to start without PostgreSQL, Redis and the RailKit provider
+      - key: RAILWAY_PROVIDER
+        value: railkit
+      - key: LOG_LEVEL
+        value: INFO
+      - key: LOG_JSON
+        value: "true"
+
+services:
+  # --- FastAPI backend: private, reachable only from railroute-web over Render's private network.
+  - type: pserv
+    name: railroute-backend
+    runtime: docker
+    region: singapore
+    plan: 0.5c-512mb
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    # Schema migrations before the new version starts; a failure keeps the old version running.
+    preDeployCommand: alembic upgrade head
+    autoDeployTrigger: checksPass # deploy a commit only after GitHub CI passed
+    # Searches run in-process: on a deploy the old instance finishes them (grace 95 s) before exit.
+    maxShutdownDelaySeconds: 120
+    buildFilter:
+      paths:
+        - backend/**
+    envVars:
+      - fromGroup: railroute-backend-settings
+      - key: DATABASE_URL
+        fromDatabase:
+          name: railroute-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: railroute-cache
+          property: connectionString
+      - key: RAILKIT_API_KEY
+        sync: false # server-side only; never sent to the browser
+      - key: PROVIDER_MONTHLY_REQUEST_LIMIT
+        sync: false # slightly BELOW your RailKit plan's monthly requests
+      - key: PROVIDER_WINDOW_REQUEST_LIMIT
+        sync: false # slightly BELOW your plan's per-10-minute limit
+      - key: METRICS_TOKEN
+        generateValue: true # Bearer token for /api/v1/metrics and /api/v1/ops/*
+      - key: SEARCH_MAX_AVAILABILITY_REQUESTS
+        value: "100" # provider attempts per search, retries included
+      - key: RAILKIT_MAX_CONCURRENCY
+        value: "4"
+      - key: MAX_CONCURRENT_SEARCHES
+        value: "4"
+      - key: SEARCH_SHUTDOWN_GRACE_SECONDS
+        value: "95" # > SEARCH_DEADLINE_SECONDS (90), < maxShutdownDelaySeconds (120)
+      - key: TRUSTED_PROXY_HOPS
+        value: "1" # verify after the first deploy with /api/v1/ops/client-address (docs/11 §6)
+
+  # --- Next.js frontend: the only public service. Browser API calls go to its same-origin proxy.
+  - type: web
+    name: railroute-web
+    runtime: docker
+    region: singapore
+    plan: 0.5c-512mb
+    dockerContext: ./frontend/web
+    dockerfilePath: ./frontend/web/Dockerfile
+    healthCheckPath: /
+    autoDeployTrigger: checksPass
+    buildFilter:
+      paths:
+        - frontend/web/**
+    envVars:
+      - key: BACKEND_INTERNAL_URL
+        fromService: # host:port on the private network (the proxy adds http://)
+          type: pserv
+          name: railroute-backend
+          property: hostport
+      - key: PORT
+        value: "3000"
+
+  # --- Daily data retention (docs/10 §7) at 03:00 IST, with the backend image.
+  - type: cron
+    name: railroute-retention
+    runtime: docker
+    region: singapore
+    plan: 0.5c-512mb
+    schedule: "30 21 * * *" # 21:30 UTC = 03:00 IST
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    dockerCommand: python -m app.cli purge
+    envVars:
+      - fromGroup: railroute-backend-settings
+      - key: DATABASE_URL
+        fromDatabase:
+          name: railroute-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: railroute-cache
+          property: connectionString
+      - key: RAILKIT_API_KEY # only to pass production config validation; never used by the job
+        fromService:
+          type: pserv
+          name: railroute-backend
+          envVarKey: RAILKIT_API_KEY
+
+  # --- Redis-compatible store: cache, single-flight locks, provider quota counters, API rate
+  # limits and stop-search signals. `noeviction`: quota counters must never be silently evicted
+  # (every key already has a TTL; if memory ever ran out, provider calls fail closed instead).
+  - type: keyvalue
+    name: railroute-cache
+    region: singapore
+    plan: 256mb
+    maxmemoryPolicy: noeviction
+    ipAllowList: [] # private network only
+
+databases:
+  - name: railroute-db
+    region: singapore
+    plan: 0.1c-256mb
+    postgresMajorVersion: "18"
+    databaseName: railroute
+    user: railroute_owner
+    ipAllowList: [] # private network only (allow your IP temporarily for one-off psql work)

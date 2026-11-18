@@ -5,7 +5,8 @@
 * Bounded retries with jittered exponential backoff for timeouts, network errors and 5xx only.
   400/401/403/404/429 are never retried. Every attempt passes the quota observer first, is
   reported to the caller's per-call gate, and every retry needs the gate's permission (a search
-  budget pays for retries; docs/08 D-28).
+  budget pays for retries; docs/08 D-28). A call the caller withdrew (search stopped, D-35) is
+  never sent: checked before the quota guard and again after waiting for a connection slot.
 * A semaphore bounds concurrent in-flight requests for the whole process.
 """
 
@@ -28,6 +29,7 @@ from app.providers.base import (
     NullRequestObserver,
     ProviderRequestEvent,
     ProviderRequestObserver,
+    ensure_may_start,
     report_attempt,
     retry_allowed,
 )
@@ -124,12 +126,15 @@ class RailKitHttpClient:
         attempt = 0
         while True:
             attempt += 1
+            ensure_may_start()  # withdrawn (search stopped): not sent, not counted by the guard
             await self._observer.before_request(PROVIDER_NAME, endpoint)
-            report_attempt()
             started = time.perf_counter()
             status_code: int | None = None
             try:
                 async with self._semaphore:
+                    # It may have been withdrawn while waiting for a free connection slot.
+                    ensure_may_start()
+                    report_attempt()
                     response = await self._client.get(
                         path, params=params, headers={"x-api-key": self._api_key}
                     )

@@ -6,18 +6,40 @@ import { AvailabilityBadge, Notice, PredictionIndicator, StaleIndicator, toneCla
 import type { JourneySearch, Recommendation, Segment } from "@/lib/api/schemas";
 import { formatDayMonth, formatMoney, formatTime } from "@/lib/format";
 import { quotaSummaryText } from "@/lib/quotas";
-import { COMPLETENESS_TEXT, TIER_TONE } from "@/lib/status";
+import { COMPLETENESS_TEXT, stoppedByUser, stoppedTitle, TIER_TONE } from "@/lib/status";
 
-export function SearchProgress({ search }: { search: JourneySearch }) {
+export function SearchProgress({
+  search,
+  onStop,
+  stopping = false,
+  stopError = null,
+}: {
+  search: JourneySearch;
+  /** Stops the server-side search; absent when stopping is not possible. */
+  onStop?: () => void;
+  stopping?: boolean;
+  stopError?: string | null;
+}) {
   const coverage = search.coverage;
   const made = coverage?.availability_requests_made ?? 0;
   const budget = coverage?.request_budget ?? 0;
   const percent = budget ? Math.min(100, Math.round((made / budget) * 100)) : 0;
   return (
     <section aria-labelledby="progress-title" className="card">
-      <h2 id="progress-title" className="font-semibold">
-        {search.status === "QUEUED" ? "Search queued…" : "Checking segment availability…"}
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 id="progress-title" className="font-semibold">
+          {stopping
+            ? "Stopping…"
+            : search.status === "QUEUED"
+              ? "Search queued…"
+              : "Checking segment availability…"}
+        </h2>
+        {onStop ? (
+          <button type="button" className="btn btn-secondary" onClick={onStop} disabled={stopping}>
+            {stopping ? "Stopping…" : "Stop search"}
+          </button>
+        ) : null}
+      </div>
       <div
         className="mt-3 h-2 w-full overflow-hidden rounded-full bg-surface-muted"
         role="progressbar"
@@ -34,6 +56,17 @@ export function SearchProgress({ search }: { search: JourneySearch }) {
         {coverage?.cache_hits ?? 0} served from cache · {search.recommendations.length}{" "}
         combination(s) found so far
       </p>
+      {stopping ? (
+        <p className="mt-1 text-sm text-muted" aria-live="polite">
+          No new availability checks are sent. Requests already sent are finishing; the results
+          found so far will stay.
+        </p>
+      ) : null}
+      {stopError ? (
+        <p role="alert" className="mt-1 text-sm text-danger">
+          {stopError}
+        </p>
+      ) : null}
     </section>
   );
 }
@@ -43,8 +76,15 @@ export function CoverageNotice({ search }: { search: JourneySearch }) {
   if (!completeness || !search.coverage) return null;
   const meta = COMPLETENESS_TEXT[completeness] ?? { title: completeness, tone: "info" as const };
   const c = search.coverage;
+  const stopped = stoppedByUser(search);
   return (
-    <Notice tone={meta.tone} title={meta.title}>
+    <Notice tone={meta.tone} title={stopped ? stoppedTitle(search) : meta.title}>
+      {stopped ? (
+        <p className="mb-1">
+          You stopped the search. These are the best of the segments checked so far — segments
+          that were not checked may hold better options.
+        </p>
+      ) : null}
       <p>
         Checked {c.segments_checked} segment(s) across {c.trains_evaluated} train(s) and{" "}
         {c.combinations_evaluated} train × class × quota combination(s)
@@ -56,14 +96,14 @@ export function CoverageNotice({ search }: { search: JourneySearch }) {
         {c.cache_hits} from cache
         {c.segments_failed ? `, ${c.segments_failed} failed` : ""}
         {c.segments_unknown ? `, ${c.segments_unknown} unclear` : ""}.
-        {c.combinations_not_reached
+        {c.combinations_not_reached && !stopped
           ? ` ${c.combinations_not_reached} combination(s) could not be checked at all within the budget — select fewer trains or classes.`
           : ""}
         {c.availability_requests_planned > c.availability_requests_made + c.cache_hits
           ? ` About ${c.availability_requests_planned - c.availability_requests_made - c.cache_hits} more checks were needed for full coverage.`
           : ""}
       </p>
-      {completeness.startsWith("NO_PATH") ? (
+      {completeness.startsWith("NO_PATH") && !stopped ? (
         <p className="mt-1">
           {completeness === "NO_PATH_FOUND_PARTIAL"
             ? "No combination was found in the segments checked — that does not mean none exist."

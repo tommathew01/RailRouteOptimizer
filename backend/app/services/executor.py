@@ -42,9 +42,12 @@ class InlineExecutor:
 
 
 class InProcessExecutor:
-    def __init__(self, *, max_concurrent: int) -> None:
+    def __init__(self, *, max_concurrent: int, shutdown_grace_seconds: float = 0.0) -> None:
         self._semaphore = asyncio.Semaphore(max_concurrent)
         self._tasks: set[asyncio.Task[None]] = set()
+        #: On shutdown, running searches may finish for up to this long before being cancelled
+        #: (they are then reported FAILED / INTERRUPTED with their partial results).
+        self._shutdown_grace = shutdown_grace_seconds
 
     @property
     def runs_inline(self) -> bool:
@@ -65,6 +68,15 @@ class InProcessExecutor:
             await asyncio.gather(*list(self._tasks), return_exceptions=True)
 
     async def aclose(self) -> None:
+        """Drain, then cancel. During a zero-downtime deploy the old instance gets SIGTERM after
+        traffic has moved: its searches keep writing progress to PostgreSQL, so users polling
+        the new instance see them finish normally (docs/08 D-37)."""
+        if self._shutdown_grace > 0 and self._tasks:
+            logger.info(
+                "waiting for running searches before shutdown",
+                extra={"searches": len(self._tasks), "grace_seconds": self._shutdown_grace},
+            )
+            await asyncio.wait(list(self._tasks), timeout=self._shutdown_grace)
         for task in list(self._tasks):
             task.cancel()
         for task in list(self._tasks):

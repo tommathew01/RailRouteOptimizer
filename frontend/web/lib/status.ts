@@ -55,9 +55,46 @@ export const COMPLETENESS_TEXT: Record<string, { title: string; tone: "info" | "
     title: "Partial search — some quotas not checked yet",
     tone: "warning",
   },
+  PARTIAL_STOPPED: { title: "Search stopped", tone: "info" },
   NO_PATH_FOUND: { title: "No combination found", tone: "info" },
   NO_PATH_FOUND_PARTIAL: {
     title: "No combination found in the segments checked",
     tone: "warning",
   },
 };
+
+type SearchOutcome = {
+  status: string;
+  search_completeness: string | null;
+  incomplete_reason: string | null;
+  recommendations: readonly unknown[];
+};
+
+/** The user pressed "Stop search" (docs/08 D-35). */
+export function stoppedByUser(search: SearchOutcome): boolean {
+  return search.incomplete_reason === "STOPPED_BY_USER";
+}
+
+function combinations(count: number): string {
+  return `${count} combination${count === 1 ? "" : "s"}`;
+}
+
+/** Title of the coverage notice for a stopped search, with the real count. */
+export function stoppedTitle(search: SearchOutcome): string {
+  const count = search.recommendations.length;
+  return count
+    ? `Search stopped. Showing ${combinations(count)} found so far.`
+    : "Search stopped before any combination was found.";
+}
+
+/**
+ * Heading of the results list. Only a search that checked everything it planned shows "Top"
+ * recommendations; partial ones never claim to be the overall best.
+ */
+export function resultsHeading(search: SearchOutcome): string {
+  if (search.status === "QUEUED" || search.status === "RUNNING") return "Preliminary combinations";
+  if (stoppedByUser(search)) return "Best combinations found before you stopped";
+  const done = search.search_completeness;
+  if (done === "COMPLETE" || done === "NO_PATH_FOUND") return "Top recommendations";
+  return "Best combinations among the segments checked";
+}

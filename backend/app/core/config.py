@@ -125,12 +125,16 @@ class Settings(BaseSettings):
     search_max_availability_requests: int = Field(default=30, ge=1, le=500)
     search_deadline_seconds: float = Field(default=90.0, gt=0, le=600)
     planner_max_intermediate_stops: int = Field(default=30, ge=0, le=200)
-    max_recommendations: int = Field(default=20, ge=1, le=100)
+    #: Final (and partial) results are the top N of the existing ranking (docs/08 D-36).
+    max_recommendations: int = Field(default=10, ge=1, le=100)
     max_paths_per_combination: int = Field(default=50, ge=1, le=1_000)
     availability_date_policy: AvailabilityDatePolicy = AvailabilityDatePolicy.SEGMENT_BOARDING_DATE
     max_advance_booking_days: int = Field(default=60, ge=1, le=365)
     search_execution_mode: ExecutionMode = ExecutionMode.ASYNC
     max_concurrent_searches: int = Field(default=4, ge=1, le=64)
+    #: Seconds a stopping process lets running searches finish (0 = cancel at once). Keep it
+    #: below the platform's kill timeout (Render: maxShutdownDelaySeconds). docs/08 D-37.
+    search_shutdown_grace_seconds: float = Field(default=0.0, ge=0, le=300)
 
     # --- Caching (TTL values pending RailKit agreement verification) -------------------------
     availability_cache_ttl_seconds: int = Field(default=120, ge=0, le=3_600)

@@ -96,6 +96,14 @@ class ProviderCallGate(Protocol):
 
     async def allow_retry(self) -> bool: ...
 
+    def may_start(self) -> bool:
+        """``False`` once the caller no longer wants this call (e.g. the search was stopped)."""
+        ...
+
+
+class ProviderCallStoppedError(Exception):
+    """The caller withdrew a call before it was sent (not a provider error: nothing was asked)."""
+
 
 _call_gate: ContextVar[ProviderCallGate | None] = ContextVar("provider_call_gate", default=None)
 
@@ -115,6 +123,13 @@ def report_attempt() -> None:
     gate = _call_gate.get()
     if gate is not None:
         gate.attempt_started()
+
+
+def ensure_may_start() -> None:
+    """Adapters: call right before sending an attempt; raises when the caller withdrew it."""
+    gate = _call_gate.get()
+    if gate is not None and not gate.may_start():
+        raise ProviderCallStoppedError("the provider call was withdrawn before it was sent")
 
 
 async def retry_allowed() -> bool:

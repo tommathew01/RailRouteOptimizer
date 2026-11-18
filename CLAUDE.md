@@ -112,7 +112,8 @@ Commands (from the repo root): `make check` (lint + types + tests, no infrastruc
 (Playwright; on this machine export
 `LD_LIBRARY_PATH=$HOME/.cache/railroute/chromium-libs/root/usr/lib/x86_64-linux-gnu` first),
 `make test-live` (spends real RailKit quota — only when explicitly asked).
-Operations, deployment and incident handling: `docs/10_OPERATIONS_RUNBOOK.md`.
+Operations, deployment and incident handling: `docs/10_OPERATIONS_RUNBOOK.md`; hosted production
+(Render, `render.yaml`): `docs/11_PRODUCTION_DEPLOYMENT.md`.
 
 Local note: this machine also runs native PostgreSQL (5432) and Redis (6379); the Compose
 services are published on `POSTGRES_HOST_PORT` / `REDIS_HOST_PORT` instead (e.g. 55432 / 56379).

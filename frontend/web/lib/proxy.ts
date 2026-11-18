@@ -19,6 +19,17 @@ export const FORWARDED_RESPONSE_HEADERS = [
 
 export class UnsafePathError extends Error {}
 
+/**
+ * The backend base URL from `BACKEND_INTERNAL_URL`. Platforms that link services by address
+ * (e.g. Render's private-service `hostport`) supply `host:port` without a scheme; internal
+ * traffic is plain HTTP on the private network, so `http://` is assumed then.
+ */
+export function backendBaseUrl(configured: string | undefined): string {
+  const value = (configured ?? "").trim();
+  if (!value) return "http://127.0.0.1:8000";
+  return /^[a-z][a-z0-9+.-]*:\/\//i.test(value) ? value : `http://${value}`;
+}
+
 /** Build the backend URL for `/api/v1/<segments>?<search>`; rejects traversal and odd input. */
 export function buildBackendUrl(base: string, segments: readonly string[], search: string): URL {
   if (segments.length === 0 || segments.length > 8) {
@@ -34,13 +45,25 @@ export function buildBackendUrl(base: string, segments: readonly string[], searc
   return url;
 }
 
+/**
+ * Operator endpoints (`/api/v1/metrics`, `/api/v1/ops/*`) are the only ones that read
+ * `Authorization`: the backend checks a Bearer token (METRICS_TOKEN) and answers 404 without one
+ * outside development. Forwarding it for these paths lets operators monitor quota usage and
+ * calibrate TRUSTED_PROXY_HOPS through the public URL while the backend stays private.
+ */
+export function isOperatorPath(segments: readonly string[]): boolean {
+  return segments[0] === "metrics" || segments[0] === "ops";
+}
+
 /** Copy only allowlisted headers; append the client address chain for backend rate limiting. */
-export function buildForwardHeaders(incoming: Headers): Headers {
+export function buildForwardHeaders(incoming: Headers, segments: readonly string[] = []): Headers {
   const headers = new Headers();
   for (const name of FORWARDED_REQUEST_HEADERS) {
     const value = incoming.get(name);
     if (value) headers.set(name, value);
   }
+  const authorization = incoming.get("authorization");
+  if (authorization && isOperatorPath(segments)) headers.set("authorization", authorization);
   const forwardedFor = incoming.get("x-forwarded-for");
   if (forwardedFor) headers.set("x-forwarded-for", forwardedFor);
   return headers;

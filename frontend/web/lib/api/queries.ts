@@ -6,6 +6,7 @@ import {
   MetaSchema,
   OptimizeResultSchema,
   SearchPlanSchema,
+  SearchStopSchema,
   StationSearchResponseSchema,
   TrainRouteResponseSchema,
   TrainSearchResponseSchema,
@@ -118,4 +119,15 @@ export async function startOptimization(input: OptimizeInput): Promise<{
   });
   const completed = "request" in result ? result : null;
   return { searchId: result.search_id, completed };
+}
+
+/**
+ * Ask the server to stop a running search (docs/08 D-35). The server stops sending availability
+ * requests; aborting a browser request would not. Results so far stay; poll for the final state.
+ */
+export async function stopSearch(searchId: string) {
+  return apiRequest(`/journeys/${encodeURIComponent(searchId)}/stop`, {
+    method: "POST",
+    schema: SearchStopSchema,
+  });
 }

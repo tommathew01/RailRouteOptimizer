@@ -147,7 +147,10 @@ class AppContainer:
         executor: SearchExecutor = (
             InlineExecutor()
             if settings.search_execution_mode is ExecutionMode.SYNC
-            else InProcessExecutor(max_concurrent=settings.max_concurrent_searches)
+            else InProcessExecutor(
+                max_concurrent=settings.max_concurrent_searches,
+                shutdown_grace_seconds=settings.search_shutdown_grace_seconds,
+            )
         )
         eligibility = QuotaEligibilityService(
             settings=settings, clock=clock, supported_quotas=provider.supported_quotas
@@ -162,6 +165,7 @@ class AppContainer:
             executor=executor,
             provider_name=provider.name,
             data_mode="LIVE" if provider.is_live else "DEMO",
+            store=namespaced,
         )
         rate_limiter = ApiRateLimiter(
             namespaced,
